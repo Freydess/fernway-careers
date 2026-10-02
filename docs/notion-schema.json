@@ -1,0 +1,94 @@
+{
+  "title": "Candidate ATS Tracker",
+  "purpose": "Configure these properties in the Notion UI. This is a schema specification, not an API request.",
+  "board_group_by": "Status",
+  "properties": [
+    {
+      "name": "Name",
+      "type": "title"
+    },
+    {
+      "name": "Email",
+      "type": "email"
+    },
+    {
+      "name": "Phone",
+      "type": "phone_number"
+    },
+    {
+      "name": "Role",
+      "type": "select",
+      "options": [
+        "Engineering",
+        "Design",
+        "Marketing",
+        "Operations",
+        "Other"
+      ]
+    },
+    {
+      "name": "Experience",
+      "type": "select",
+      "options": [
+        "Intern",
+        "Junior",
+        "Mid",
+        "Senior",
+        "Lead"
+      ]
+    },
+    {
+      "name": "Experience Years",
+      "type": "number"
+    },
+    {
+      "name": "Portfolio",
+      "type": "url"
+    },
+    {
+      "name": "Resume",
+      "type": "url"
+    },
+    {
+      "name": "Salary Expectation",
+      "type": "rich_text"
+    },
+    {
+      "name": "Availability",
+      "type": "rich_text"
+    },
+    {
+      "name": "Summary Notes",
+      "type": "rich_text"
+    },
+    {
+      "name": "Application ID",
+      "type": "rich_text"
+    },
+    {
+      "name": "Timezone",
+      "type": "rich_text"
+    },
+    {
+      "name": "Role Details",
+      "type": "rich_text"
+    },
+    {
+      "name": "Role Answers",
+      "type": "rich_text"
+    },
+    {
+      "name": "Status",
+      "type": "status",
+      "options": [
+        "New Applicants",
+        "Screening",
+        "Interview",
+        "Offered",
+        "Hired",
+        "Rejected",
+        "Withdrawn"
+      ]
+    }
+  ]
+}

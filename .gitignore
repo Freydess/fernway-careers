@@ -1,0 +1,18 @@
+# Backend (Python)
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+data/
+
+# Frontend (frontend/)
+node_modules/
+frontend/dist/
+.vercel/
+.env.local
+.env.*.local
+
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,19 @@
+{
+  "full_name": "Alex Example",
+  "email": "alex@example.com",
+  "phone": "+66000000000",
+  "timezone": "Asia/Bangkok",
+  "target_role": "engineering",
+  "role_detail": "Backend developer",
+  "experience_level": "junior",
+  "experience_years": 2,
+  "portfolio_url": "https://github.com/example",
+  "resume_url": "https://example.com/resume.pdf",
+  "compensation_amount": 35000,
+  "compensation_currency": "THB",
+  "compensation_period": "month",
+  "availability": "2-4 weeks",
+  "fit_summary": "Candidate reports experience building Python APIs and SQL databases.",
+  "role_answers": {"tech_stack": "Python, PostgreSQL"},
+  "consent_to_process": true
+}

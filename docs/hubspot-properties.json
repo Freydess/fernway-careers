@@ -1,0 +1,213 @@
+{
+  "group": {
+    "name": "candidate_recruitment",
+    "label": "Candidate recruitment",
+    "displayOrder": 10
+  },
+  "properties": [
+    {
+      "name": "candidate_full_name",
+      "label": "Candidate full name",
+      "type": "string",
+      "fieldType": "text",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_target_role",
+      "label": "Candidate target role",
+      "type": "enumeration",
+      "fieldType": "select",
+      "groupName": "candidate_recruitment",
+      "options": [
+        {
+          "label": "Engineering",
+          "value": "engineering",
+          "displayOrder": 0,
+          "hidden": false
+        },
+        {
+          "label": "Design",
+          "value": "design",
+          "displayOrder": 1,
+          "hidden": false
+        },
+        {
+          "label": "Marketing",
+          "value": "marketing",
+          "displayOrder": 2,
+          "hidden": false
+        },
+        {
+          "label": "Operations",
+          "value": "operations",
+          "displayOrder": 3,
+          "hidden": false
+        },
+        {
+          "label": "Other",
+          "value": "other",
+          "displayOrder": 4,
+          "hidden": false
+        }
+      ],
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_role_detail",
+      "label": "Candidate role details",
+      "type": "string",
+      "fieldType": "text",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_experience_level",
+      "label": "Candidate experience level",
+      "type": "enumeration",
+      "fieldType": "select",
+      "groupName": "candidate_recruitment",
+      "options": [
+        {
+          "label": "Intern",
+          "value": "intern",
+          "displayOrder": 0,
+          "hidden": false
+        },
+        {
+          "label": "Junior",
+          "value": "junior",
+          "displayOrder": 1,
+          "hidden": false
+        },
+        {
+          "label": "Mid",
+          "value": "mid",
+          "displayOrder": 2,
+          "hidden": false
+        },
+        {
+          "label": "Senior",
+          "value": "senior",
+          "displayOrder": 3,
+          "hidden": false
+        },
+        {
+          "label": "Lead",
+          "value": "lead",
+          "displayOrder": 4,
+          "hidden": false
+        }
+      ],
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_experience_years",
+      "label": "Candidate years of experience",
+      "type": "number",
+      "fieldType": "number",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_resume_url",
+      "label": "Candidate resume URL",
+      "type": "string",
+      "fieldType": "text",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_salary_expectations",
+      "label": "Candidate salary expectations",
+      "type": "string",
+      "fieldType": "text",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_availability",
+      "label": "Candidate availability",
+      "type": "string",
+      "fieldType": "text",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_fit_summary",
+      "label": "Candidate fit summary",
+      "type": "string",
+      "fieldType": "textarea",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_application_status",
+      "label": "Candidate application status",
+      "type": "enumeration",
+      "fieldType": "select",
+      "groupName": "candidate_recruitment",
+      "options": [
+        {
+          "label": "New Applicants",
+          "value": "new_applicants",
+          "displayOrder": 0,
+          "hidden": false
+        },
+        {
+          "label": "Screening",
+          "value": "screening",
+          "displayOrder": 1,
+          "hidden": false
+        },
+        {
+          "label": "Interview",
+          "value": "interview",
+          "displayOrder": 2,
+          "hidden": false
+        },
+        {
+          "label": "Offered",
+          "value": "offered",
+          "displayOrder": 3,
+          "hidden": false
+        },
+        {
+          "label": "Hired",
+          "value": "hired",
+          "displayOrder": 4,
+          "hidden": false
+        },
+        {
+          "label": "Rejected",
+          "value": "rejected",
+          "displayOrder": 5,
+          "hidden": false
+        },
+        {
+          "label": "Withdrawn",
+          "value": "withdrawn",
+          "displayOrder": 6,
+          "hidden": false
+        }
+      ],
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_application_id",
+      "label": "Candidate application ID",
+      "type": "string",
+      "fieldType": "text",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    },
+    {
+      "name": "candidate_timezone",
+      "label": "Candidate timezone",
+      "type": "string",
+      "fieldType": "text",
+      "groupName": "candidate_recruitment",
+      "description": "Applicant intake data; managed by the personalized employment backend."
+    }
+  ]
+}
