@@ -29,6 +29,9 @@ const INTAKE_FIELDS = [
 ];
 const IDEMPOTENCY_KEY = /^[A-Za-z0-9-]{16,100}$/;
 const DEFAULT_BACKEND_URL = 'http://127.0.0.1:8000';
+// Render's free plan sleeps when idle and takes up to about a minute to wake, so wait that long.
+// Keep this under maxDuration in api/apply.js.
+const BACKEND_TIMEOUT_MS = 55_000;
 const limitSubmissions = createRateLimiter({ limit: 6, windowMs: 10 * 60_000 });
 
 export async function handleApplyRequest({ method, body, headers, ip, env }) {
@@ -68,7 +71,7 @@ export async function handleApplyRequest({ method, body, headers, ip, env }) {
         'Idempotency-Key': body.idempotencyKey,
       },
       body: JSON.stringify(intake),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS),
     });
   } catch (error) {
     console.error(`[apply] Could not reach the backend at ${backendUrl}: ${error.message}`);

@@ -282,7 +282,12 @@ export function renderReview(container, { app, roles, suggestedIds, notice, onBa
     Object.assign(app, next);
     submitButton.disabled = true;
     submitButton.firstChild.textContent = 'Sending…';
+    // The backend can take up to a minute to wake up; reassure people that nothing is stuck.
+    const slowTimer = setTimeout(() => {
+      submitButton.firstChild.textContent = 'Still sending, this can take a minute…';
+    }, 6000);
     const result = await onSubmit(app, { honeypot: honeypot.value });
+    clearTimeout(slowTimer);
     submitButton.disabled = false;
     submitButton.firstChild.textContent = 'Send application';
     if (result.ok) return;

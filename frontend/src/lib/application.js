@@ -106,7 +106,7 @@ export const ANSWER_LABELS = {
 export function buildFitSummary(app) {
   const facts = [
     app.target_role && `${labelFor(ROLE_AREAS, app.target_role)}${app.role_detail ? ` (${app.role_detail})` : ''}`,
-    app.experience_level && `${labelFor(EXPERIENCE_LEVELS, app.experience_level)} level${app.experience_years !== '' ? `, ${app.experience_years} years` : ''}`,
+    app.experience_level && `${labelFor(EXPERIENCE_LEVELS, app.experience_level)} level${app.experience_years !== '' ? `, ${app.experience_years} ${Number(app.experience_years) === 1 ? 'year' : 'years'}` : ''}`,
     app.availability && availabilityPhrase(app.availability),
   ].filter(Boolean);
   const answers = Object.entries(app.role_answers)
