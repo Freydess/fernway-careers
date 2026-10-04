@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
@@ -6,16 +7,15 @@ import { defineConfig, loadEnv } from 'vite';
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, '..');
 
-// Server-only settings the dev API may read. Values come from the backend's .env in
-// the project root (INTAKE_API_TOKEN) and from frontend/.env.local; real environment
-// variables win over both. None of this is ever sent to the browser.
-const SERVER_ENV = /^(AI_|BACKEND_URL$|INTAKE_API_TOKEN$|INTAKE_DEMO$|ALLOWED_ORIGINS$)/;
+// Server-only settings the dev API may read. Values come from the project root .env and
+// from frontend/.env.local; real environment variables win over both. None of this is
+// ever sent to the browser.
+const SERVER_ENV = /^(AI_|BACKEND_URL$|MARKETPLACE_MODE$|ALLOWED_ORIGINS$)/;
 
 // During `npm run dev`, serve /api/* with the same handlers Vercel runs in production
 // (see api/*.js), so the whole site works locally without a Vercel account.
 const API_ROUTES = {
   '/api/status': ['/server/status-handler.js', 'handleStatusRequest'],
-  '/api/apply': ['/server/apply-handler.js', 'handleApplyRequest'],
   '/api/chat': ['/server/chat-handler.js', 'handleChatRequest'],
 };
 
@@ -75,13 +75,19 @@ export default defineConfig(({ mode }) => {
     root: here,
     envDir: here,
     plugins: [tailwindcss(), devApi()],
-    server: { port: 5173 },
+    server: {
+      port: 5173,
+      // Live mode: the marketplace API (/api/v2) is the Python backend, same as on Vercel.
+      proxy: { '/api/v2': { target: process.env.BACKEND_URL || 'http://127.0.0.1:8000' } },
+    },
     build: {
       rolldownOptions: {
-        input: {
-          main: resolve(here, 'index.html'),
-          privacy: resolve(here, 'privacy.html'),
-        },
+        // Every .html file in this folder is a page.
+        input: Object.fromEntries(
+          readdirSync(here)
+            .filter((file) => file.endsWith('.html'))
+            .map((file) => [file.replace(/\.html$/, ''), resolve(here, file)]),
+        ),
       },
     },
   };

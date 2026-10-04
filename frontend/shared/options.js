@@ -30,6 +30,33 @@ export const PAY_PERIODS = [
 
 export const CURRENCIES = ['THB', 'USD', 'EUR', 'GBP', 'SGD', 'MYR', 'VND', 'PHP', 'IDR', 'INR', 'JPY', 'KRW', 'CNY', 'AUD', 'CAD'];
 
+export const EMPLOYMENT_TYPES = [
+  { value: 'full_time', label: 'Full-time' },
+  { value: 'part_time', label: 'Part-time' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'internship', label: 'Internship' },
+  { value: 'freelance', label: 'Freelance' },
+];
+
+export const WORK_MODES = [
+  { value: 'remote', label: 'Remote' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'onsite', label: 'On-site' },
+];
+
+// The backend's hiring stages (app/schemas.py), as each side of the marketplace sees them.
+export const APPLICATION_STATUSES = {
+  new_applicants: { seeker: 'Sent', employer: 'New', tone: 'info', icon: 'send' },
+  screening: { seeker: 'Seen by employer', employer: 'Reviewing', tone: 'neutral', icon: 'eye' },
+  interview: { seeker: 'Accepted', employer: 'Accepted', tone: 'success', icon: 'checkCircle' },
+  offered: { seeker: 'Offer made', employer: 'Offer made', tone: 'success', icon: 'star' },
+  hired: { seeker: 'Hired', employer: 'Hired', tone: 'success', icon: 'award' },
+  rejected: { seeker: 'Not selected', employer: 'Rejected', tone: 'danger', icon: 'xCircle' },
+  withdrawn: { seeker: 'Withdrawn', employer: 'Withdrawn', tone: 'muted', icon: 'undo' },
+};
+
+export const FINAL_STATUSES = new Set(['hired', 'rejected', 'withdrawn']);
+
 export function labelFor(options, value) {
   return options.find((option) => option.value === value)?.label ?? value;
 }

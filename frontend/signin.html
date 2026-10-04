@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · Fernway</title>
+    <meta name="description" content="Sign in to Fernway to see the jobs that match you, or to review applications for your jobs." />
+    <meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1510" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/signin.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-shell-header><div class="h-16"></div></header>
+
+    <main id="main" tabindex="-1" class="page-narrow max-w-md py-12 sm:py-16">
+      <h1 class="page-title">Sign in</h1>
+      <p class="mt-2 text-ink-muted">New here? <a class="link" href="signup.html" data-signup-link>Create an account</a></p>
+
+      <form class="panel mt-8 grid gap-5 p-5 sm:p-6" novalidate data-signin-form>
+        <div data-error-summary></div>
+        <div class="field" data-field="email">
+          <label class="field-label" for="signin-email">Email</label>
+          <input class="input" id="signin-email" name="email" type="email" autocomplete="email" required aria-describedby="signin-email-error" />
+          <p class="field-error" id="signin-email-error" hidden></p>
+        </div>
+        <div class="field" data-field="password">
+          <label class="field-label" for="signin-password">Password</label>
+          <div class="relative">
+            <input class="input pr-24" id="signin-password" name="password" type="password" autocomplete="current-password" required aria-describedby="signin-password-error" />
+            <button type="button" class="btn btn-ghost btn-sm absolute top-1/2 right-1.5 -translate-y-1/2" data-toggle-password aria-controls="signin-password" aria-pressed="false">Show</button>
+          </div>
+          <p class="field-error" id="signin-password-error" hidden></p>
+        </div>
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+
+      <section class="mt-8 grid gap-3" data-demo-accounts hidden aria-labelledby="demo-title">
+        <h2 id="demo-title" class="section-title">Try a demo account</h2>
+        <p class="text-ink-muted">Demo accounts sign in with one click. Try a job seeker in one window and an employer in another.</p>
+        <ul class="grid gap-2" data-demo-list></ul>
+      </section>
+    </main>
+
+    <footer class="border-t border-line" data-shell-footer></footer>
+  </body>
+</html>

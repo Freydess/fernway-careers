@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your applications · Fernway</title>
+    <meta name="description" content="The jobs you've applied to on Fernway, and what each employer decided." />
+    <meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1510" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/applications.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-shell-header><div class="h-16"></div></header>
+
+    <main id="main" tabindex="-1" class="page-narrow py-10 sm:py-12">
+      <h1 class="page-title">Your applications</h1>
+      <p class="mt-2 text-ink-muted">You’ll get a notification when an employer accepts or rejects one.</p>
+      <div class="mt-8" data-applications>
+        <div class="grid gap-3" aria-hidden="true"><div class="skeleton h-28"></div><div class="skeleton h-28"></div></div>
+        <p class="sr-only" role="status">Loading your applications…</p>
+      </div>
+    </main>
+
+    <footer class="border-t border-line" data-shell-footer></footer>
+  </body>
+</html>

@@ -193,7 +193,7 @@ function multiComposer({ options, label = 'Choose any that apply', continueLabel
 }
 
 /**
- * A text box with a send button. kind: 'text' | 'url' | 'email' | 'number'.
+ * A text box with a send button. kind: 'text' | 'url' | 'email' | 'tel' | 'number'.
  * Resolves with the cleaned value, or '' when an optional question is skipped.
  */
 function textComposer(spec, answer) {
@@ -216,8 +216,8 @@ function textComposer(spec, answer) {
     ? h('textarea', { ...shared, class: 'input chat-textarea', rows: 1, maxlength: maxLength })
     : h('input', {
         ...shared,
-        type: kind === 'number' ? 'number' : kind === 'email' ? 'email' : 'text',
-        inputmode: { url: 'url', email: 'email', number: 'decimal' }[kind] ?? null,
+        type: { number: 'number', email: 'email', tel: 'tel' }[kind] ?? 'text',
+        inputmode: { url: 'url', email: 'email', number: 'decimal', tel: 'tel' }[kind] ?? null,
         maxlength: kind === 'number' ? null : maxLength,
         min,
         max,

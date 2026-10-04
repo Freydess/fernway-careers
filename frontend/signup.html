@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Create an account · Fernway</title>
+    <meta name="description" content="Create a free Fernway account to find jobs that match your skills, or to post jobs and review applicants." />
+    <meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1510" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/signup.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-shell-header><div class="h-16"></div></header>
+
+    <main id="main" tabindex="-1" class="page-narrow max-w-lg py-12 sm:py-16">
+      <h1 class="page-title">Create your account</h1>
+      <p class="mt-2 text-ink-muted">Already have one? <a class="link" href="signin.html" data-signin-link>Sign in</a></p>
+
+      <form class="mt-8 grid gap-6" novalidate data-signup-form>
+        <div data-error-summary></div>
+
+        <fieldset class="field" data-field="role">
+          <legend class="field-label mb-2">I’m here to</legend>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="role-option items-start p-4" for="role-seeker">
+              <input class="checkbox" type="radio" id="role-seeker" name="role" value="seeker" checked />
+              <span class="grid gap-0.5"><span class="font-semibold">Find a job</span><span class="text-sm text-ink-muted">Make a profile and apply to jobs</span></span>
+            </label>
+            <label class="role-option items-start p-4" for="role-employer">
+              <input class="checkbox" type="radio" id="role-employer" name="role" value="employer" />
+              <span class="grid gap-0.5"><span class="font-semibold">Hire people</span><span class="text-sm text-ink-muted">Post jobs and review applicants</span></span>
+            </label>
+          </div>
+          <p class="field-error" hidden></p>
+        </fieldset>
+
+        <div class="panel grid gap-5 p-5 sm:p-6">
+          <div class="field" data-field="full_name">
+            <label class="field-label" for="signup-name">Your full name</label>
+            <input class="input" id="signup-name" name="full_name" type="text" autocomplete="name" maxlength="200" required aria-describedby="signup-name-error" />
+            <p class="field-error" id="signup-name-error" hidden></p>
+          </div>
+          <div class="field" data-field="company_name" data-company-field hidden>
+            <label class="field-label" for="signup-company">Company name</label>
+            <input class="input" id="signup-company" name="company_name" type="text" autocomplete="organization" maxlength="200" aria-describedby="signup-company-error" />
+            <p class="field-error" id="signup-company-error" hidden></p>
+          </div>
+          <div class="field" data-field="email">
+            <label class="field-label" for="signup-email">Email</label>
+            <input class="input" id="signup-email" name="email" type="email" autocomplete="email" required aria-describedby="signup-email-hint signup-email-error" />
+            <p class="field-hint" id="signup-email-hint" data-email-hint>Employers you apply to will use this to contact you.</p>
+            <p class="field-error" id="signup-email-error" hidden></p>
+          </div>
+          <div class="field" data-field="password">
+            <label class="field-label" for="signup-password">Password</label>
+            <div class="relative">
+              <input class="input pr-24" id="signup-password" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="signup-password-hint signup-password-error" />
+              <button type="button" class="btn btn-ghost btn-sm absolute top-1/2 right-1.5 -translate-y-1/2" data-toggle-password aria-controls="signup-password" aria-pressed="false">Show</button>
+            </div>
+            <p class="field-hint" id="signup-password-hint">At least 8 characters. A password manager works here.</p>
+            <p class="field-error" id="signup-password-error" hidden></p>
+          </div>
+        </div>
+
+        <p class="text-sm text-ink-muted">By creating an account you agree to how we handle your details, explained in the <a class="link" href="privacy.html">privacy notice</a>.</p>
+        <button class="btn btn-primary justify-self-start px-6" type="submit" data-submit>Create account</button>
+      </form>
+    </main>
+
+    <footer class="border-t border-line" data-shell-footer></footer>
+  </body>
+</html>

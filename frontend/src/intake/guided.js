@@ -1,20 +1,19 @@
-// Path C: the guided chat. The same friendly script for everyone in an area, written
-// as one async function on top of chat.ask(). Questions already answered (for example
-// in the AI chat, before switching) are skipped.
+// The guided chat: Fern asks a fixed, friendly set of questions and fills in the job
+// seeker's profile. Written as one async function on top of chat.ask(). Questions that
+// are already answered (on the profile, or earlier in the AI chat) are skipped.
 
 import { company } from '../../shared/company.js';
 import { AVAILABILITY, CURRENCIES, EXPERIENCE_LEVELS, PAY_PERIODS, ROLE_AREAS } from '../../shared/options.js';
 import { firstName, guessCurrency } from '../lib/application.js';
-import { matchRoles } from '../lib/matching.js';
 
-// Area-specific questions. `field` is an application field; anything else is saved in
-// role_answers under that key (keys match the backend's Typeform references).
+// Area-specific questions. `field` is a profile field, `skills` adds to the skills list,
+// and anything else is kept in role_answers and folded into "About you" at the end.
 const BRANCHES = {
   engineering: [
     {
-      field: 'tech_stack',
-      ask: 'Which languages or frameworks do you use most?',
-      input: { multiline: true, placeholder: 'e.g. TypeScript, React, Python, PostgreSQL', label: 'Languages and frameworks' },
+      field: 'skills',
+      ask: 'Which languages, frameworks and tools do you use most? Separate them with commas.',
+      input: { multiline: true, placeholder: 'e.g. TypeScript, React, Python, PostgreSQL', label: 'Languages and tools' },
     },
     {
       field: 'portfolio_url',
@@ -25,30 +24,25 @@ const BRANCHES = {
   design: [
     {
       field: 'portfolio_url',
-      ask: 'Where can we see your work? A portfolio or Figma link is perfect.',
-      input: { kind: 'url', placeholder: 'yourname.design', label: 'Portfolio link', optional: true, skipLabel: 'I’ll share it later' },
+      ask: 'Where can employers see your work? A portfolio or Figma link is perfect.',
+      input: { kind: 'url', placeholder: 'yourname.design', label: 'Portfolio link', optional: true, skipLabel: 'I’ll add it later' },
     },
     {
       field: 'case_study',
-      ask: 'Tell us about one project you’re proud of: the problem, and what changed because of your design.',
+      ask: 'Tell me about one project you’re proud of: the problem, and what changed because of your design.',
       input: { multiline: true, placeholder: 'A sentence or two is plenty', label: 'A project you’re proud of' },
     },
   ],
   marketing: [
     {
-      field: 'acquisition_channels',
+      field: 'skills',
       ask: 'Which channels do you know best? Pick any.',
-      input: { type: 'multi', label: 'Channels', options: ['SEO', 'Paid ads', 'Social', 'Email', 'Content', 'Partnerships', 'Events', 'Community'] },
+      input: { type: 'multi', label: 'Channels', options: ['SEO', 'Paid ads', 'Social media', 'Email', 'Content', 'Partnerships', 'Events', 'Community'] },
     },
     {
       field: 'key_metrics',
       ask: 'What’s a result you’ve driven that you’re proud of?',
       input: { multiline: true, placeholder: 'e.g. Grew newsletter sign-ups 40% in three months', label: 'A result you’re proud of' },
-    },
-    {
-      field: 'portfolio_url',
-      ask: 'What’s your LinkedIn or portfolio link?',
-      input: { kind: 'url', placeholder: 'linkedin.com/in/yourname', label: 'LinkedIn or portfolio link', optional: true, skipLabel: 'Skip' },
     },
   ],
   operations: [
@@ -58,7 +52,7 @@ const BRANCHES = {
       input: {
         type: 'choices',
         label: 'Operations focus',
-        options: ['People & recruiting', 'Customer operations', 'Finance & admin', 'Business operations'].map((value) => ({ value, label: value })),
+        options: ['People & recruiting', 'Customer support', 'Finance & admin', 'Business operations'].map((value) => ({ value, label: value })),
       },
     },
     {
@@ -66,52 +60,53 @@ const BRANCHES = {
       ask: 'What’s a process you improved, or a result you’re proud of?',
       input: { multiline: true, placeholder: 'e.g. Cut new-hire onboarding from two weeks to four days', label: 'A result you’re proud of' },
     },
-    {
-      field: 'portfolio_url',
-      ask: 'What’s your LinkedIn profile?',
-      input: { kind: 'url', placeholder: 'linkedin.com/in/yourname', label: 'LinkedIn link', optional: true, skipLabel: 'Skip' },
-    },
   ],
   other: [
     {
       field: 'role_detail',
       ask: 'What kind of role are you looking for?',
-      input: { placeholder: 'e.g. Customer support, data analysis…', label: 'Role you’re looking for', maxLength: 200 },
+      input: { placeholder: 'e.g. Data analysis, customer support…', label: 'Role you’re looking for', maxLength: 200 },
     },
     {
       field: 'highlights',
-      ask: 'Anything about your experience we should know?',
+      ask: 'Tell me a little about your experience so far.',
       input: { multiline: true, label: 'Your experience', optional: true, skipLabel: 'Skip' },
-    },
-    {
-      field: 'portfolio_url',
-      ask: 'Is there a link that shows your work, like LinkedIn or a portfolio?',
-      input: { kind: 'url', placeholder: 'linkedin.com/in/yourname', label: 'Link to your work', optional: true, skipLabel: 'Skip' },
     },
   ],
 };
 
-const isAppField = (app, field) => Object.hasOwn(app, field) && field !== 'role_answers';
+const isAppField = (app, field) => Object.hasOwn(app, field) && field !== 'role_answers' && field !== 'skills';
 
 function hasAnswer(app, field) {
+  if (field === 'skills') return app.skills.length > 0;
   return isAppField(app, field) ? app[field] !== '' : Boolean(app.role_answers[field]);
 }
 
+/** Splits "React, CSS and Figma" style answers into separate skills. */
+export function splitSkills(value) {
+  const parts = Array.isArray(value) ? value : String(value ?? '').split(/,|\n|;|\band\b/);
+  return parts.map((part) => part.trim().toLowerCase()).filter((part) => part && part.length <= 40);
+}
+
 function record(app, field, value) {
+  if (field === 'skills') {
+    app.skills = [...new Set([...app.skills, ...splitSkills(value)])];
+    return;
+  }
   const text = Array.isArray(value) ? value.join(', ') : value;
   if (text === '' || text == null) return;
   if (isAppField(app, field)) app[field] = text;
   else app.role_answers[field] = text;
 }
 
-export async function runGuidedFlow(chat, { app, roles, preselectedRole, setProgress, onReview }) {
+export async function runGuidedFlow(chat, { app, setProgress, onReview }) {
   const branch = () => BRANCHES[app.target_role] ?? BRANCHES.other;
   let answered = 0;
   const step = () => setProgress(++answered / (9 + branch().length));
   setProgress(0);
 
-  await chat.bot(`Hi! I’m ${company.assistantName}, ${company.name}’s hiring assistant 🌿`);
-  await chat.bot('I’ll ask a few quick questions (about 2 minutes), then show you roles that fit. You can check and edit everything before it’s sent.');
+  await chat.bot(`Hi! I’m ${company.assistantName}. I’ll ask a few quick questions (about 2 minutes) and fill in your ${company.name} profile.`);
+  await chat.bot('Nothing is saved until you check it, and you can change anything afterwards.');
   await chat.ask({ type: 'choices', options: [{ value: 'start', label: 'Let’s go' }] });
 
   if (!app.full_name) {
@@ -121,14 +116,10 @@ export async function runGuidedFlow(chat, { app, roles, preselectedRole, setProg
   step();
   const name = firstName(app.full_name);
 
-  if (preselectedRole) {
-    app.target_role = preselectedRole.area;
-    if (!app.interested_roles.includes(preselectedRole.id)) app.interested_roles.push(preselectedRole.id);
-    await chat.bot(`Great to meet you, ${name}! You’re interested in the ${preselectedRole.title} role. Nice choice.`);
-  } else if (app.target_role) {
+  if (app.target_role) {
     await chat.bot(`Great to meet you, ${name}!`);
   } else {
-    await chat.bot(`Great to meet you, ${name}! Which area fits you best?`);
+    await chat.bot(`Great to meet you, ${name}! Which area do you want to work in?`);
     app.target_role = await chat.ask({ type: 'choices', label: 'Area', options: ROLE_AREAS });
   }
   step();
@@ -140,6 +131,12 @@ export async function runGuidedFlow(chat, { app, roles, preselectedRole, setProg
     }
     step();
   }
+
+  if (!app.skills.length) {
+    await chat.bot('Which skills or tools are you good at? Separate them with commas.');
+    record(app, 'skills', await chat.ask({ multiline: true, placeholder: 'e.g. Excel, customer service, Canva', label: 'Skills and tools' }));
+  }
+  step();
 
   if (!app.experience_level) {
     await chat.bot('How would you describe your experience level?');
@@ -167,7 +164,7 @@ export async function runGuidedFlow(chat, { app, roles, preselectedRole, setProg
   step();
 
   if (app.compensation_amount === '' && !app.compensation_expectations) {
-    await chat.bot('What pay are you hoping for? This is optional, and it won’t rule you out.');
+    await chat.bot('What pay are you hoping for? This is optional, and it won’t hide any jobs from you.');
     const pay = await chat.ask({ type: 'pay', currency: guessCurrency(app.timezone), currencies: CURRENCIES, periods: PAY_PERIODS });
     if (pay) {
       app.compensation_amount = pay.amount;
@@ -177,23 +174,12 @@ export async function runGuidedFlow(chat, { app, roles, preselectedRole, setProg
   }
   step();
 
-  if (!app.email) {
-    await chat.bot('Almost done! Where should we reach you?');
-    const contact = await chat.ask({ type: 'contact' });
-    app.email = contact.email;
-    app.phone = contact.phone;
+  if (!app.phone) {
+    await chat.bot('Last one: a phone number employers can call? Only employers you apply to will see it.');
+    app.phone = await chat.ask({ kind: 'tel', placeholder: '+66 00 000 0000', label: 'Phone number', autocomplete: 'tel', maxLength: 40, optional: true, skipLabel: 'Skip' });
   }
   step();
 
-  const matches = matchRoles(app, roles, { include: preselectedRole?.id });
-  if (matches.length) {
-    await chat.bot(`Thanks, ${name}! Based on what you told me, these roles look like a good fit. Untick any you’re not interested in.`);
-    app.interested_roles = await chat.ask({ type: 'roles', matches });
-  } else {
-    await chat.bot(`Thanks, ${name}! None of our open roles is a close match right now, but our team reads every application and keeps strong profiles in mind for new roles.`);
-  }
-  step();
-
-  await chat.bot('Here’s everything in one place. Check it, then send it to our team.');
+  await chat.bot(`Thanks, ${name}! I’ll put all of this into your profile now, so you can check it and save.`);
   onReview();
 }

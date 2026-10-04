@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard · Fernway for employers</title>
+    <meta name="description" content="Your jobs on Fernway and the applications waiting for you." />
+    <meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1510" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/employer.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-shell-header><div class="h-16"></div></header>
+
+    <main id="main" tabindex="-1" class="page py-10 sm:py-12">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="page-title" data-company-name>Your jobs</h1>
+          <p class="mt-2 text-ink-muted" role="status" data-summary>Loading…</p>
+        </div>
+        <a class="btn btn-primary" href="employer-job.html">Post a job</a>
+      </div>
+
+      <section class="mt-8" aria-label="Your jobs" data-jobs>
+        <div class="skeleton h-48" aria-hidden="true"></div>
+      </section>
+
+      <section id="company" class="mt-16 grid gap-4" aria-labelledby="company-title">
+        <div>
+          <h2 id="company-title" class="font-display text-2xl font-semibold tracking-tight">Company details</h2>
+          <p class="mt-1 text-ink-muted">Shown on each of your job posts.</p>
+        </div>
+        <div data-company-form></div>
+      </section>
+    </main>
+
+    <footer class="border-t border-line" data-shell-footer></footer>
+  </body>
+</html>

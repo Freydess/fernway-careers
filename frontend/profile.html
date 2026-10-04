@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your profile · Fernway</title>
+    <meta name="description" content="Your Fernway profile: the skills and experience employers see when you apply." />
+    <meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1510" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/profile.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-shell-header><div class="h-16"></div></header>
+
+    <main id="main" tabindex="-1" class="page-narrow py-10 sm:py-12">
+      <h1 class="page-title">Your profile</h1>
+      <p class="mt-2 max-w-2xl text-ink-muted">Employers see this when you apply, and Fernway uses it to rank jobs for you. Fill in what you’re comfortable sharing.</p>
+
+      <section class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-brand-soft p-5" aria-labelledby="fern-title" data-fern-panel>
+        <div class="grid gap-1">
+          <h2 id="fern-title" class="font-display text-lg font-semibold text-ink">Rather chat than fill in a form?</h2>
+          <p class="max-w-md text-ink-muted">Fern, our assistant, asks a few questions and fills in your profile. You check it before saving.</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-open-fern>Build it with Fern</button>
+      </section>
+
+      <div class="mt-8" data-profile-form>
+        <div class="grid gap-4" aria-hidden="true"><div class="skeleton h-48"></div><div class="skeleton h-48"></div></div>
+        <p class="sr-only" role="status">Loading your profile…</p>
+      </div>
+    </main>
+
+    <footer class="border-t border-line" data-shell-footer></footer>
+
+    <dialog id="intake" class="intake-dialog" aria-labelledby="intake-title">
+      <header class="flex items-center gap-3 border-b border-line px-4 py-3 sm:px-5">
+        <div class="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5C5 11 10 5 19.5 4.5C19.5 14 14 19.5 5 19.5zM5 19.5l8-8" /></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 id="intake-title" class="truncate font-semibold text-ink">Fern, your profile helper</h2>
+          <p class="truncate text-sm text-ink-muted" data-intake-subtitle>Guided chat, about 2 minutes</p>
+        </div>
+        <button type="button" class="icon-button" data-intake-restart aria-label="Start over" title="Start over">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" /></svg>
+        </button>
+        <button type="button" class="icon-button" data-intake-close aria-label="Close" title="Close">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </header>
+      <div class="border-b border-line px-4 py-2.5 sm:px-5" data-mode-switch hidden></div>
+      <div class="h-1 w-full shrink-0 bg-surface-2" data-progress role="progressbar" aria-label="Profile progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="h-full w-0 bg-brand transition-[width] duration-500" data-progress-bar></div>
+      </div>
+      <section data-view="chat" class="flex min-h-0 flex-1 flex-col" aria-label="Chat">
+        <div data-chat-log role="log" class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5"></div>
+        <div data-chat-composer tabindex="-1" class="max-h-[60%] shrink-0 overflow-y-auto border-t border-line bg-surface px-4 py-3 outline-none sm:px-5"></div>
+      </section>
+    </dialog>
+  </body>
+</html>

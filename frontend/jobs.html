@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Find jobs · Fernway</title>
+    <meta name="description" content="Search open jobs on Fernway by skill, area, experience level and where you want to work." />
+    <meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1510" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/jobs.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-shell-header><div class="h-16"></div></header>
+
+    <main id="main" tabindex="-1" class="page py-10 sm:py-12">
+      <h1 class="page-title" data-title>Find jobs</h1>
+      <p class="mt-2 max-w-2xl text-ink-muted" data-intro>Search by skill, job title or company.</p>
+      <div class="mt-4" data-profile-notice></div>
+
+      <div class="mt-8 grid items-start gap-8 lg:grid-cols-[17rem_1fr]">
+        <form class="panel grid gap-4 p-5 lg:sticky lg:top-24" role="search" aria-label="Filter jobs" data-filters>
+          <div class="field">
+            <label class="field-label" for="filter-q">Keywords</label>
+            <input class="input" id="filter-q" name="q" type="search" placeholder="e.g. designer, python" autocomplete="off" />
+          </div>
+          <!-- On phones the other filters fold away so the jobs come first; open on wide screens. -->
+          <details class="group grid" data-more-filters>
+            <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between font-semibold text-ink lg:hidden">
+              More filters
+              <svg class="size-5 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6l6-6" /></svg>
+            </summary>
+            <div class="mt-3 grid gap-4 lg:mt-0">
+              <div class="field">
+                <label class="field-label" for="filter-area">Area</label>
+                <select class="input" id="filter-area" name="area"><option value="">Any area</option></select>
+              </div>
+              <div class="field">
+                <label class="field-label" for="filter-level">Experience level</label>
+                <select class="input" id="filter-level" name="level"><option value="">Any level</option></select>
+              </div>
+              <div class="field">
+                <label class="field-label" for="filter-mode">Where</label>
+                <select class="input" id="filter-mode" name="work_mode"><option value="">Anywhere</option></select>
+              </div>
+              <div class="field">
+                <label class="field-label" for="filter-type">Job type</label>
+                <select class="input" id="filter-type" name="employment_type"><option value="">Any type</option></select>
+              </div>
+              <button class="btn btn-ghost justify-self-start px-2" type="reset">Clear filters</button>
+            </div>
+          </details>
+        </form>
+
+        <section aria-labelledby="results-heading" class="grid gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="results-heading" class="text-ink-muted" role="status" data-count>Loading jobs…</h2>
+            <label class="flex items-center gap-2 text-sm" data-sort-wrapper hidden>
+              <span class="font-semibold">Sort by</span>
+              <select class="input min-h-10 w-auto py-1.5 text-sm" data-sort>
+                <option value="match">Best match</option>
+                <option value="newest">Newest</option>
+              </select>
+            </label>
+          </div>
+          <div data-results></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="border-t border-line" data-shell-footer></footer>
+  </body>
+</html>

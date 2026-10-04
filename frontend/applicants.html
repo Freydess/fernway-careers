@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Applicants · Fernway for employers</title>
+    <meta name="description" content="People who applied to your job on Fernway, with how well each one matches." />
+    <meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1510" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/pages/applicants.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-shell-header><div class="h-16"></div></header>
+
+    <main id="main" tabindex="-1" class="page py-10 sm:py-12">
+      <a class="link text-sm" href="employer.html">Dashboard</a>
+      <div class="mt-4" data-applicants>
+        <div class="grid gap-3" aria-hidden="true"><div class="skeleton h-9 w-1/2"></div><div class="skeleton h-64"></div></div>
+        <p class="sr-only" role="status">Loading applicants…</p>
+      </div>
+    </main>
+
+    <footer class="border-t border-line" data-shell-footer></footer>
+  </body>
+</html>

@@ -1,7 +1,6 @@
-// The application being built up in the chat, and how it becomes the backend's
-// intake payload (see the root README: "API contract").
+// The profile draft Fern's chats fill in, plus small helpers for its answers.
 
-import { AVAILABILITY, EXPERIENCE_LEVELS, PAY_PERIODS, ROLE_AREAS, labelFor } from '../../shared/options.js';
+import { PAY_PERIODS, labelFor } from '../../shared/options.js';
 
 export function createApplication() {
   return {
@@ -93,34 +92,6 @@ export const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(valu
 
 export const isValidPhone = (value) => /^\+?[\d\s().-]{7,40}$/.test(value) && value.replace(/\D/g, '').length >= 7;
 
-/** Readable labels for the area-specific answers, used on the review screen. */
-export const ANSWER_LABELS = {
-  tech_stack: 'Languages and frameworks',
-  case_study: 'A project you’re proud of',
-  acquisition_channels: 'Channels you know best',
-  key_metrics: 'A result you’re proud of',
-  highlights: 'Skills and highlights',
-};
-
-/** A short, factual note for the hiring team, written from the guided chat's answers. */
-export function buildFitSummary(app) {
-  const facts = [
-    app.target_role && `${labelFor(ROLE_AREAS, app.target_role)}${app.role_detail ? ` (${app.role_detail})` : ''}`,
-    app.experience_level && `${labelFor(EXPERIENCE_LEVELS, app.experience_level)} level${app.experience_years !== '' ? `, ${app.experience_years} ${Number(app.experience_years) === 1 ? 'year' : 'years'}` : ''}`,
-    app.availability && availabilityPhrase(app.availability),
-  ].filter(Boolean);
-  const answers = Object.entries(app.role_answers)
-    .filter(([key]) => key !== 'interested_roles')
-    .map(([key, value]) => `${ANSWER_LABELS[key] ?? key}: ${value}`);
-  return [facts.join(' · '), ...answers].filter(Boolean).join('\n');
-}
-
-function availabilityPhrase(availability) {
-  if (availability === 'Just exploring') return 'Just exploring for now';
-  if (AVAILABILITY.includes(availability)) return `Can start ${availability.toLowerCase()}`;
-  return `Availability: ${availability}`;
-}
-
 export function formatPay(amount, currency, period) {
   let money;
   try {
@@ -129,55 +100,4 @@ export function formatPay(amount, currency, period) {
     money = `${amount} ${currency}`;
   }
   return `${money} ${labelFor(PAY_PERIODS, period)}`;
-}
-
-const clip = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
-
-/**
- * The exact JSON the backend's POST /api/v1/intake accepts. Empty optional fields are
- * left out (the backend treats absent as "not provided" and rejects empty URLs).
- */
-export function toIntakePayload(app, roles) {
-  const interested = app.interested_roles.map((id) => roles.find((role) => role.id === id)?.title).filter(Boolean);
-  const roleAnswers = { ...app.role_answers };
-  if (interested.length) roleAnswers.interested_roles = interested.join(', ');
-  const summary = [app.fit_summary.trim(), interested.length ? `Interested in: ${interested.join(', ')}` : '']
-    .filter(Boolean)
-    .join('\n\n');
-
-  const payload = {
-    full_name: app.full_name.trim(),
-    email: app.email.trim(),
-    phone: app.phone.trim(),
-    timezone: app.timezone,
-    target_role: app.target_role,
-    role_detail: clip(app.role_detail.trim(), 200),
-    experience_level: app.experience_level,
-    portfolio_url: app.portfolio_url,
-    resume_url: app.resume_url,
-    compensation_expectations: clip(app.compensation_expectations.trim(), 500),
-    availability: clip(app.availability.trim(), 500),
-    fit_summary: clip(summary, 8000),
-    role_answers: Object.fromEntries(
-      Object.entries(roleAnswers)
-        .filter(([, value]) => typeof value === 'string' && value.trim())
-        .slice(0, 15)
-        .map(([key, value]) => [key.slice(0, 100), clip(value.trim(), 2000)]),
-    ),
-    consent_to_process: app.consent_to_process === true,
-  };
-  if (app.experience_years !== '' && Number.isFinite(Number(app.experience_years))) {
-    payload.experience_years = Math.round(Number(app.experience_years) * 10) / 10;
-  }
-  // The backend needs amount, currency and period together, or none of them.
-  if (app.compensation_amount !== '' && app.compensation_currency && app.compensation_period) {
-    payload.compensation_amount = Math.round(Number(app.compensation_amount) * 100) / 100;
-    payload.compensation_currency = app.compensation_currency;
-    payload.compensation_period = app.compensation_period;
-  }
-  for (const [key, value] of Object.entries(payload)) {
-    const isEmptyObject = typeof value === 'object' && value !== null && !Object.keys(value).length;
-    if (value === '' || value == null || isEmptyObject) delete payload[key];
-  }
-  return payload;
 }

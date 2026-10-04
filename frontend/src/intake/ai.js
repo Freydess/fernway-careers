@@ -1,15 +1,17 @@
-// Path B: chat with Fern, the AI recruiter. Each message goes to our own server function
-// (/api/chat), which holds the AI key and returns Fern's reply plus the application
-// fields collected so far. Nothing is submitted until the candidate reviews and consents.
+// The AI chat: Fern talks with the job seeker in their own words and fills in their
+// profile. Each message goes to our own server function (/api/chat), which holds the AI
+// key and returns Fern's reply plus the profile fields collected so far. Nothing is saved
+// until the person checks the profile form.
 
 import { company } from '../../shared/company.js';
 import { EXPERIENCE_LEVELS, ROLE_AREAS } from '../../shared/options.js';
 import { normalizeUrl } from '../lib/application.js';
 import { sleep } from '../lib/dom.js';
+import { splitSkills } from './guided.js';
 
 const AREA_VALUES = new Set(ROLE_AREAS.map((area) => area.value));
 const LEVEL_VALUES = new Set(EXPERIENCE_LEVELS.map((level) => level.value));
-const TEXT_FIELDS = ['full_name', 'email', 'phone', 'role_detail', 'availability', 'compensation_expectations'];
+const TEXT_FIELDS = ['full_name', 'phone', 'headline', 'role_detail', 'availability', 'compensation_expectations'];
 
 const ERROR_MESSAGES = {
   ai_not_configured: 'The AI chat isn’t switched on yet. The guided chat asks the same things in about 2 minutes.',
@@ -17,15 +19,11 @@ const ERROR_MESSAGES = {
   network: 'I can’t reach the server right now. Check your connection and try again.',
 };
 
-export async function runAIFlow(chat, { app, preselectedRole, setProgress, onReview, switchMode }) {
+export async function runAIFlow(chat, { app, setProgress, onReview, switchMode }) {
   const history = [];
-  const greeting = preselectedRole
-    ? `Hi! I’m ${company.assistantName}, ${company.name}’s AI hiring assistant 🌿 I see you’re curious about the ${preselectedRole.title} role. To start, what’s your name?`
-    : `Hi! I’m ${company.assistantName}, ${company.name}’s AI hiring assistant 🌿 What’s your name, and what kind of work do you enjoy?`;
-  if (preselectedRole) {
-    app.target_role ||= preselectedRole.area;
-    if (!app.interested_roles.includes(preselectedRole.id)) app.interested_roles.push(preselectedRole.id);
-  }
+  const greeting = app.full_name
+    ? `Hi ${app.full_name.split(' ')[0]}! I’m ${company.assistantName}. Tell me about the work you do, or the work you want, and I’ll fill in your profile as we go.`
+    : `Hi! I’m ${company.assistantName}, and I’ll help you fill in your ${company.name} profile. What’s your name, and what kind of work do you enjoy?`;
   await chat.bot(greeting);
   history.push({ role: 'assistant', content: greeting });
   setProgress(progressOf(app));
@@ -33,8 +31,8 @@ export async function runAIFlow(chat, { app, preselectedRole, setProgress, onRev
   for (;;) {
     const message = await chat.ask({ multiline: true, placeholder: 'Write a reply…', label: 'Your message', maxLength: 1500 });
     history.push({ role: 'user', content: message });
-    const turn = await requestTurn(chat, history, app, preselectedRole, switchMode);
-    if (!turn) return; // the candidate switched to the guided chat
+    const turn = await requestTurn(chat, history, app, switchMode);
+    if (!turn) return; // they switched to the guided chat
     mergeFields(app, turn.fields);
     history.push({ role: 'assistant', content: turn.reply });
     await chat.bot(turn.reply);
@@ -43,7 +41,7 @@ export async function runAIFlow(chat, { app, preselectedRole, setProgress, onRev
       const next = await chat.ask({
         type: 'choices',
         options: [
-          { value: 'review', label: 'Review my application' },
+          { value: 'review', label: 'Put it in my profile' },
           { value: 'chat', label: 'Keep chatting' },
         ],
       });
@@ -52,11 +50,11 @@ export async function runAIFlow(chat, { app, preselectedRole, setProgress, onRev
   }
 }
 
-async function requestTurn(chat, history, app, role, switchMode) {
+async function requestTurn(chat, history, app, switchMode) {
   const stillCurrent = chat.checkpoint();
   for (let attempt = 1; ; attempt++) {
     const hideTyping = chat.showTyping();
-    const result = await postTurn(history, app, role);
+    const result = await postTurn(history, app);
     hideTyping();
     stillCurrent();
     if (result.ok) return result.turn;
@@ -82,12 +80,12 @@ async function requestTurn(chat, history, app, role, switchMode) {
   }
 }
 
-async function postTurn(history, app, role) {
+async function postTurn(history, app) {
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: history.slice(-40), known: knownFields(app), roleId: role?.id ?? null }),
+      body: JSON.stringify({ messages: history.slice(-40), known: knownFields(app) }),
     });
     const data = await response.json().catch(() => ({}));
     if (response.ok && typeof data.reply === 'string') return { ok: true, turn: data };
@@ -102,22 +100,22 @@ function knownFields(app) {
   const orNull = (value) => (value === '' || value == null ? null : value);
   return {
     full_name: orNull(app.full_name),
-    email: orNull(app.email),
     phone: orNull(app.phone),
+    headline: orNull(app.headline),
     target_role: orNull(app.target_role),
     role_detail: orNull(app.role_detail),
     experience_level: orNull(app.experience_level),
     experience_years: app.experience_years === '' ? null : Number(app.experience_years),
+    skills: app.skills.length ? app.skills : null,
     portfolio_url: orNull(app.portfolio_url),
     resume_url: orNull(app.resume_url),
     highlights: orNull(app.role_answers.highlights),
     availability: orNull(app.availability),
     compensation_expectations: orNull(app.compensation_expectations),
-    fit_summary: orNull(app.fit_summary),
   };
 }
 
-/** Copies Fern's fields into the application, keeping only values the backend accepts. */
+/** Copies Fern's fields into the profile draft, keeping only values the backend accepts. */
 function mergeFields(app, fields = {}) {
   for (const name of TEXT_FIELDS) {
     if (typeof fields[name] === 'string' && fields[name].trim()) app[name] = fields[name].trim();
@@ -131,19 +129,11 @@ function mergeFields(app, fields = {}) {
     const url = normalizeUrl(fields[name]);
     if (url) app[name] = url;
   }
+  if (Array.isArray(fields.skills)) app.skills = [...new Set([...app.skills, ...splitSkills(fields.skills)])].slice(0, 30);
   if (typeof fields.highlights === 'string' && fields.highlights.trim()) app.role_answers.highlights = fields.highlights.trim();
-  if (typeof fields.fit_summary === 'string' && fields.fit_summary.trim()) app.fit_summary = fields.fit_summary.trim();
 }
 
 function progressOf(app) {
-  const done = [
-    app.full_name,
-    app.target_role,
-    app.experience_level,
-    app.role_answers.highlights,
-    app.portfolio_url || app.resume_url,
-    app.availability,
-    app.email,
-  ].filter(Boolean).length;
+  const done = [app.full_name, app.target_role, app.experience_level, app.skills.length, app.role_answers.highlights, app.portfolio_url || app.resume_url, app.availability].filter(Boolean).length;
   return done / 7;
 }

@@ -1,48 +1,27 @@
-// Facts about the (fictional) company. The careers page and Fern's instructions
-// both read from here, so the AI never contradicts the page. Edit freely.
+// Facts about Fernway, the (fictional) job platform. The pages and Fern's instructions
+// both read from here, so the AI never contradicts the site. Edit freely.
 
 export const company = {
   name: 'Fernway',
   assistantName: 'Fern',
-  tagline: 'Calm, useful software for independent studios.',
+  tagline: 'Jobs that fit what you can already do.',
   about:
-    'Fernway builds booking and client-management software for independent studios: yoga teachers, tutors, salons and small clinics. We are a remote-first team of about 30 people.',
-  values: [
-    {
-      title: 'Small team, real ownership',
-      text: 'You ship work customers touch in your first month, and you own it from idea to release.',
-    },
-    {
-      title: 'Calm over crunch',
-      text: 'We plan instead of sprinting forever. Nobody is expected to answer messages after hours.',
-    },
-    {
-      title: 'Write it down',
-      text: 'We work async-first. Decisions live in shared docs, not in someone’s head.',
-    },
-    {
-      title: 'Grow on purpose',
-      text: 'Everyone gets a yearly learning budget, a mentor, and a growth chat every quarter.',
-    },
+    'Fernway is a job platform for Thailand. Job seekers build one profile with their skills and experience, see the jobs that match them, and apply in a click. Employers post jobs, get notified about each application, and accept or reject it on Fernway.',
+  forSeekers: [
+    'Creating an account and a profile is free',
+    'Jobs are ranked by how well they match your skills, area and experience level',
+    'Each application sends a copy of your profile, plus an optional note, to that employer only',
+    'You can follow every application and withdraw it at any time',
   ],
-  perks: [
-    'Remote-first, flexible hours',
-    'Yearly learning budget',
-    'Home-office setup allowance',
-    'Health cover',
-    '20 days of paid leave, plus public holidays',
-    'A team retreat once a year',
+  forEmployers: [
+    'Posting jobs is free',
+    'You get a notification for every new application',
+    'You see how each applicant matches your job, then accept or reject them',
+    'Applicants see your decision and any message you add',
   ],
-  hiringProcess: [
-    'A 2-minute chat application on this page',
-    'Our hiring team reviews new applications every week',
-    'A 30-minute intro call with the hiring manager',
-    'A short paid exercise or a portfolio walkthrough',
-    'Meet the team, then an offer',
-  ],
-  // Shown after someone applies. Only promise what your team will really do.
-  reviewPromise: 'Our hiring team reviews new applications every week and replies to everyone by email within 7 days.',
-  contactEmail: 'careers@fernway.example',
+  privacyBasics:
+    'Employers only see the profiles of people who applied to their jobs. Nobody can browse or search job seekers.',
+  contactEmail: 'hello@fernway.example',
   fictionalNotice:
-    'Fernway is a fictional company created for a university project. Applications sent here are test data.',
+    'Fernway and every employer on it are fictional, made for a university project. Applications here are test data.',
 };
