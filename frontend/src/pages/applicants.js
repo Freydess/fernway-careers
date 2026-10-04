@@ -1,5 +1,5 @@
 import { company } from '../../shared/company.js';
-import { experienceLabel, statusInfo, timeAgo } from '../app/format.js';
+import { experienceLabel, skillList, statusInfo, timeAgo } from '../app/format.js';
 import { matchJob } from '../app/match.js';
 import { startPage } from '../app/shell.js';
 import { emptyState, errorState, frond, statusBadge } from '../app/ui.js';
@@ -104,7 +104,7 @@ function row(application, match) {
         { class: 'grid min-w-0 gap-1' },
         h('p', { class: 'flex items-center gap-2 font-display text-lg font-semibold text-ink' }, isNew ? h('span', { class: 'size-2 shrink-0 rounded-full bg-sun', 'aria-hidden': 'true' }) : null, candidate.full_name),
         h('p', { class: 'text-ink-muted' }, [candidate.headline, experienceLabel(candidate.experience_level, candidate.experience_years)].filter(Boolean).join('. ') || 'No headline'),
-        h('p', { class: 'text-sm text-ink-muted' }, `Applied ${timeAgo(application.created_at)}${match?.matchedSkills.length ? `. Has ${match.matchedSkills.slice(0, 4).join(', ')}` : ''}`),
+        h('p', { class: 'text-sm text-ink-muted' }, `Applied ${timeAgo(application.created_at)}${match?.matchedSkills.length ? `. Has ${skillList(match.matchedSkills, 3)}` : ''}`),
       ),
       match ? h('div', { class: 'flex items-center gap-2' }, frond(match.leaves, { size: 'md', label: `${match.label}: ${match.leaves} of 5` }), h('span', { class: 'text-sm font-semibold', 'aria-hidden': 'true' }, match.label)) : h('span'),
       h('div', { class: 'sm:justify-self-end', title: statusInfo(application.status, 'employer').label }, statusBadge(application.status, 'employer')),

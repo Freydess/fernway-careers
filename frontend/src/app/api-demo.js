@@ -88,14 +88,20 @@ function persist(data = db) {
 }
 
 // Another tab changed the demo data (for example, the employer tab accepted an application).
+// Pages listen for "fernway:data-changed" to refresh, so the bell lights up straight away.
 window.addEventListener('storage', (event) => {
-  if (event.key === DB_KEY) db = load();
+  if (event.key !== DB_KEY) return;
+  db = load();
+  window.dispatchEvent(new Event('fernway:data-changed'));
 });
 
+// The data is shared by every tab of this browser (localStorage), but each tab has its own
+// sign-in (sessionStorage). So a job seeker can use one window and an employer another,
+// and each sees what the other does.
 let memorySession = null;
 function sessionUserId() {
   try {
-    return localStorage.getItem(SESSION_KEY);
+    return sessionStorage.getItem(SESSION_KEY);
   } catch {
     return memorySession;
   }
@@ -103,8 +109,8 @@ function sessionUserId() {
 function setSession(userId) {
   memorySession = userId;
   try {
-    if (userId) localStorage.setItem(SESSION_KEY, userId);
-    else localStorage.removeItem(SESSION_KEY);
+    if (userId) sessionStorage.setItem(SESSION_KEY, userId);
+    else sessionStorage.removeItem(SESSION_KEY);
   } catch {
     // Memory only.
   }

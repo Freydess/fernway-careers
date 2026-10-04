@@ -56,7 +56,7 @@ function render(job) {
     salary_period: field({ label: 'Per', name: 'salary_period', kind: 'select', value: job?.salary_period ?? 'month', options: PAY_PERIODS.map((period) => ({ value: period.value, label: period.label.replace('per ', '') })) }),
   };
   const levels = checkboxGroup({ legend: 'Experience levels', name: 'levels', options: EXPERIENCE_LEVELS, values: job?.levels ?? [], hint: 'Choose every level that could do this job.' });
-  const skills = skillsInput({ label: 'Skills', values: job?.skills ?? [], hint: 'Press Enter after each one. These decide how well job seekers match, so use common words like “react”, “excel” or “customer support”.' });
+  const skills = skillsInput({ label: 'Skills', values: job?.skills ?? [], hint: 'Press Enter after each one. These decide how well job seekers match, so use common words like “React”, “Excel” or “customer support”.' });
   const status = editing
     ? h(
         'fieldset',

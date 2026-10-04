@@ -1,6 +1,6 @@
 // Reusable pieces of the interface, built with h() so every value is inserted as text.
 
-import { areaLabel, employmentLabel, formatSalary, statusInfo, timeAgo, workModeLabel } from './format.js';
+import { areaLabel, employmentLabel, formatSalary, skillLabel, statusInfo, timeAgo, workModeLabel } from './format.js';
 import { h, icon, uid } from '../lib/dom.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -67,7 +67,7 @@ export function skillTags(skills = [], matched = [], { matchedLabel = 'Your skil
     'ul',
     { class: 'flex flex-wrap gap-1.5', 'aria-label': 'Skills' },
     skills.map((skill) =>
-      h('li', { class: `tag ${hits.has(skill) ? 'tag-match' : ''}` }, hits.has(skill) ? [icon('check', 'size-3.5'), h('span', { class: 'sr-only' }, matchedLabel)] : null, skill),
+      h('li', { class: `tag ${hits.has(skill) ? 'tag-match' : ''}` }, hits.has(skill) ? [icon('check', 'size-3.5'), h('span', { class: 'sr-only' }, matchedLabel)] : null, skillLabel(skill)),
     ),
   );
 }
@@ -101,10 +101,14 @@ export function jobRow(job, { match = null } = {}) {
 
 /**
  * Job descriptions are plain text: blank lines separate blocks, "- " starts a bullet,
- * and a short line right before bullets works as a heading.
+ * and a short line right before bullets works as a heading. Bullets left empty (from the
+ * post-a-job template) are skipped.
  */
 export function renderDescription(text) {
-  const blocks = String(text ?? '').split(/\n\s*\n/).map((block) => block.split('\n').map((line) => line.trim()).filter(Boolean));
+  const blocks = String(text ?? '')
+    .split(/\n\s*\n/)
+    .map((block) => block.split('\n').map((line) => line.trim()).filter((line) => line && line !== '-'))
+    .filter((lines) => lines.length);
   return h(
     'div',
     { class: 'grid gap-4 leading-7' },
@@ -211,13 +215,13 @@ export function skillsInput({ label = 'Skills', name = 'skills', values = [], hi
   const errorId = `${id}-error`;
   const hintId = `${id}-hint`;
   const list = h('ul', { class: 'flex flex-wrap gap-1.5', 'aria-label': `${label} added` });
-  const input = h('input', { id, class: 'input', type: 'text', placeholder: 'e.g. figma', autocomplete: 'off', 'aria-describedby': `${hintId} ${errorId}`, maxlength: 40 });
+  const input = h('input', { id, class: 'input', type: 'text', placeholder: 'e.g. Figma', autocomplete: 'off', 'aria-describedby': `${hintId} ${errorId}`, maxlength: 40 });
   const live = h('p', { class: 'sr-only', 'aria-live': 'polite' });
 
   function render() {
     list.replaceChildren(
       ...skills.map((skill) =>
-        h('li', { class: 'tag' }, skill, h('button', { type: 'button', class: 'tag-remove', 'aria-label': `Remove ${skill}`, onclick: () => remove(skill) }, icon('close', 'size-3.5'))),
+        h('li', { class: 'tag' }, skillLabel(skill), h('button', { type: 'button', class: 'tag-remove', 'aria-label': `Remove ${skillLabel(skill)}`, onclick: () => remove(skill) }, icon('close', 'size-3.5'))),
       ),
     );
   }
@@ -232,12 +236,12 @@ export function skillsInput({ label = 'Skills', name = 'skills', values = [], hi
     }
     input.value = '';
     render();
-    if (added.length) live.textContent = `Added ${added.join(', ')}`;
+    if (added.length) live.textContent = `Added ${added.map(skillLabel).join(', ')}`;
   }
   function remove(skill) {
     skills = skills.filter((value) => value !== skill);
     render();
-    live.textContent = `Removed ${skill}`;
+    live.textContent = `Removed ${skillLabel(skill)}`;
     input.focus();
   }
   input.addEventListener('keydown', (event) => {
@@ -256,7 +260,7 @@ export function skillsInput({ label = 'Skills', name = 'skills', values = [], hi
     { class: 'field', dataset: { field: name } },
     h('label', { for: id, class: 'field-label' }, label),
     h('div', { class: 'flex gap-2' }, input, h('button', { type: 'button', class: 'btn btn-secondary shrink-0', onclick: () => add(input.value) }, 'Add')),
-    h('p', { id: hintId, class: 'field-hint' }, hint ?? 'Press Enter after each one. Use the words employers use, like “react” or “excel”.'),
+    h('p', { id: hintId, class: 'field-hint' }, hint ?? 'Press Enter after each one. Use the words employers use, like “React” or “Excel”.'),
     list,
     live,
     h('p', { id: errorId, class: 'field-error', hidden: true }),

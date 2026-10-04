@@ -11,6 +11,9 @@ export function handleStatusRequest({ env }) {
       // Anything else = demo mode, where the marketplace runs in the visitor's browser.
       marketplace: { mode: env.MARKETPLACE_MODE === 'live' ? 'live' : 'demo' },
     },
-    { 'Cache-Control': 'no-store' },
+    // Every page waits for this before it draws, and the answer only changes on a redeploy.
+    // Browsers reuse it for a minute and Vercel's CDN answers without starting the function,
+    // so a change of MARKETPLACE_MODE can take a minute or two to reach everyone.
+    { 'Cache-Control': 'public, max-age=60', 'Vercel-CDN-Cache-Control': 'max-age=60, stale-while-revalidate=3600' },
   );
 }

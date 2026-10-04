@@ -265,6 +265,7 @@ function notificationBell(api, user) {
   setInterval(() => document.visibilityState === 'visible' && refresh(), POLL_MS);
   document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && refresh());
   window.addEventListener('focus', () => refresh());
+  window.addEventListener('fernway:data-changed', () => refresh()); // demo mode: another window changed something
   return wrapper;
 }
 

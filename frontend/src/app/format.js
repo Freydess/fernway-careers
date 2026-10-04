@@ -23,6 +23,42 @@ export const workModeLabel = (value) => labelFor(WORK_MODES, value);
 export const levelsLabel = (levels = []) => disjunction.format(levels.map(levelLabel));
 export const listAnd = (items) => conjunction.format(items);
 
+// Skills are saved in lower case so "Excel" and "excel" match. For display, these words
+// get their capitals back; any other word shows as typed.
+const SKILL_WORDS = new Map(
+  [
+    ...['AI', 'API', 'APIs', 'AWS', 'BI', 'CMS', 'CRM', 'CSS', 'ERP', 'GCP', 'HR', 'HTML', 'iOS', 'KPI', 'KPIs', 'PHP', 'PR', 'QA', 'SEO', 'SQL', 'UI', 'UX'],
+    ...['Adobe', 'Airtable', 'Android', 'Asana', 'Canva', 'CapCut', 'Chinese', 'Docker', 'English', 'Excel', 'Facebook', 'FastAPI', 'Figma', 'Git', 'GitHub', 'Google', 'HubSpot'],
+    ...['Illustrator', 'InDesign', 'Instagram', 'Japanese', 'Java', 'JavaScript', 'Jira', 'Korean', 'Lightroom', 'LinkedIn', 'Microsoft', 'MySQL', 'Next.js', 'Node.js', 'Notion', 'Photoshop'],
+    ...['PostgreSQL', 'PowerPoint', 'Premiere', 'Python', 'React', 'Salesforce', 'Shopify', 'Slack', 'Tableau', 'Thai', 'TikTok', 'Trello', 'TypeScript', 'Vue', 'WordPress', 'YouTube', 'Zapier'],
+  ].map((word) => [word.toLowerCase(), word]),
+);
+const SKILL_PHRASES = new Map([
+  ['after effects', 'After Effects'],
+  ['google ads', 'Google Ads'],
+  ['google analytics', 'Google Analytics'],
+  ['google sheets', 'Google Sheets'],
+  ['line', 'LINE'],
+  ['line oa', 'LINE OA'],
+  ['microsoft office', 'Microsoft Office'],
+  ['power bi', 'Power BI'],
+  ['premiere pro', 'Premiere Pro'],
+  ['react native', 'React Native'],
+  ['word', 'Word'],
+]);
+
+/** "figma" → "Figma", "ui/ux" → "UI/UX", "user research" stays as it is. */
+export function skillLabel(skill) {
+  const value = String(skill ?? '');
+  return SKILL_PHRASES.get(value) ?? value.replace(/[^\s/]+/g, (word) => SKILL_WORDS.get(word) ?? word);
+}
+
+/** "Figma, UI, and 3 more": a few skills in words, for sentences. Never says "1 more". */
+export function skillList(skills = [], max = 4) {
+  if (skills.length <= max + 1) return listAnd(skills.map(skillLabel));
+  return listAnd([...skills.slice(0, max).map(skillLabel), `${skills.length - max} more`]);
+}
+
 function money(amount, currency) {
   try {
     return new Intl.NumberFormat(LOCALE, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 }).format(amount);

@@ -1,110 +1,123 @@
-# Integration guide: frontend ↔ backend ↔ Typeform and Groq
+# Integration guide: how Fernway's pieces connect
 
-## How the data flows
+Updated 5 October 2026, for the two-sided marketplace. All services are on free plans.
+
+## The big picture
 
 ```text
-Guided chat (C) ─┐
-                 ├─► review + consent ─► /api/apply ──► backend POST /api/v1/intake ─► database ─► HubSpot + Notion
-AI chat (B) ─────┘                         (adds the intake token,       (validates, dedupes,      (worker, when
-     │                                      honeypot, rate limit)         stores receipts)          SYNC_MODE is set)
-     └─► /api/chat ─► Groq (Fern's replies; the AI key stays on the server)
+                        ┌─ demo mode ─► api-demo.js: everything in the visitor's browser
+Pages (Vercel) ─────────┤
+                        └─ live mode ─► /api/v2/* ──(vercel.json rewrite)──► Render: FastAPI backend ─► Neon Postgres
+                                                                                   │
+                                                                     sync worker (SYNC_MODE=direct)
+                                                                                   ▼
+                                                                            HubSpot + Notion
+                                                                                   │
+                                                              Zapier (2-step Zap) ─┴─► email to the employer
 
-Typeform (A) ─► Typeform ─► backend POST /api/v1/webhooks/typeform (signed) ─► database ─► HubSpot + Notion
+Profile page "Build it with Fern" ─► /api/chat (Vercel function) ─► OpenRouter (the AI key stays on the server)
 ```
 
-One route per form: the page never writes to HubSpot or Notion itself, so nothing is processed twice.
+- **Demo mode** is the default. It needs no backend, so the site always works for a presentation.
+- **Live mode** starts when `MARKETPLACE_MODE=live` is set on Vercel. The browser calls `/api/v2` on the site's own address and Vercel forwards it to Render, so the backend's sign-in cookie is a normal first-party cookie.
+- The pages never write to HubSpot or Notion themselves. The backend's worker does, so nothing is processed twice.
 
-## What the page sends
+## The site's own server functions
 
-`/api/apply` forwards exactly the backend's intake schema, leaving out empty optional fields. Example from a real local test:
-
-```json
-{
-  "full_name": "Ploy Srisuk",
-  "email": "ploy.test@example.com",
-  "phone": "+66 00 000 0000",
-  "timezone": "Asia/Bangkok",
-  "target_role": "engineering",
-  "experience_level": "junior",
-  "experience_years": 2,
-  "portfolio_url": "https://github.com/ploy-dev",
-  "resume_url": "https://drive.google.com/file/d/test-resume/view",
-  "compensation_amount": 35000,
-  "compensation_currency": "THB",
-  "compensation_period": "month",
-  "availability": "In 2–4 weeks",
-  "fit_summary": "Engineering · Junior level, 2 years · Can start in 2–4 weeks\nLanguages and frameworks: TypeScript, React, Python and PostgreSQL\n\nInterested in: Frontend Engineer, Backend Engineer, Software Engineering Intern",
-  "role_answers": {
-    "tech_stack": "TypeScript, React, Python and PostgreSQL",
-    "applied_via": "Guided chat",
-    "interested_roles": "Frontend Engineer, Backend Engineer, Software Engineering Intern"
-  },
-  "consent_to_process": true
-}
-```
-
-`role_answers` keys used by the page are `tech_stack`, `case_study`, `acquisition_channels` and `key_metrics` (the backend's Typeform references), plus `highlights`, `interested_roles` and `applied_via` (`Guided chat` or `AI recruiter`). `applied_via` lets you compare the paths, as in the blueprint's Section 7.
-
-Each application gets an `Idempotency-Key`. Retrying the same answers reuses it, so a flaky connection can't create duplicates. Edited answers get a new key.
-
-## The page's server functions
-
-| Route | Does | Notable answers |
+| Route | Does | Answers |
 | --- | --- | --- |
-| `GET /api/status` | Says which features are on (no secrets) | `{ ai: { enabled, mock }, intake: { enabled, demo } }` |
-| `POST /api/apply` | Forwards an application to the backend | `201` ok · `422` with `fields: [{ field, message }]` for the form · `429` rate-limited · `502` backend unreachable |
-| `POST /api/chat` | One turn with Fern | `{ reply, fields, complete }` · `503` no key · `429` with `retryAfter` |
+| `GET /api/status` | Says which features are on. No secrets. Cached for a minute. | `{ ai: { enabled, mock }, marketplace: { mode } }` |
+| `POST /api/chat` | One turn of the AI chat with Fern | `{ reply, fields, complete }`. `503` when no AI key is set, `429` with `retryAfter` when rate-limited, `502` when the AI provider fails. |
+| `/api/v2/*` | Not a function: Vercel forwards it to the backend (see `vercel.json`) | The backend's answers |
 
-The same code runs on Vercel (`api/*.js`) and in `npm.cmd run dev` (`vite.config.js`).
+The same code runs on Vercel (`api/*.js`) and in `npm.cmd run dev` (`vite.config.js`). The old `/api/apply` route and Vercel's `BACKEND_URL` and `INTAKE_API_TOKEN` settings are no longer used.
 
-## Path B: Fern on Groq's free tier
+## The marketplace API (`/api/v2`)
 
-1. Sign up at [console.groq.com](https://console.groq.com). It's free and needs no card. Then create a key under **API Keys**.
-2. Locally, put it in `frontend/.env.local` as `AI_API_KEY=…` and restart the dev server. On Vercel, add it as an environment variable.
-3. The default model is `openai/gpt-oss-120b`, which supports strict JSON schemas on Groq. `openai/gpt-oss-20b` is smaller and faster if you hit limits.
+The full contract is in [codex/note-for-codex-marketplace.md](codex/note-for-codex-marketplace.md). In short:
 
-The free tier has per-minute and per-day limits; your exact numbers are on Groq's limits page. To stay within them, only the last 16 messages go to the model (earlier facts travel as a compact summary), and reasoning is kept brief. If Groq is busy, Fern waits and retries once, then offers the guided chat.
+- **Accounts:** email and password, kept by the backend, with an HTTP-only `fw_session` cookie. Two roles: `seeker` and `employer`.
+- **Seekers:** a profile (`GET`/`PUT /me/profile`), open jobs (`GET /jobs`), `POST /jobs/{id}/apply` with consent, and their applications with withdraw.
+- **Employers:** company details, jobs (post, edit, close), applicants per job, and decisions on each application.
+- **Notifications:** `GET /notifications`, which the bell checks about once a minute.
 
-**Privacy:** candidates' chat messages are processed by Groq. This is stated in the privacy notice.
+Applying copies the seeker's profile into the backend's existing `Candidate` and `Application` records as a snapshot, so the original status pipeline, history and HubSpot/Notion sync keep working. Statuses map like this:
 
-**Other providers:** `AI_BASE_URL` and `AI_MODEL` accept any OpenAI-compatible provider that supports `response_format: json_schema`. To use Claude instead, which is paid (the cheapest model, Claude Haiku 4.5, costs $1 / $5 per million input/output tokens), replace the provider call in `server/chat-handler.js` with the official Anthropic SDK. That change stays inside one function.
+| What happens | Status | Employer sees | Seeker sees |
+| --- | --- | --- | --- |
+| The seeker applies | `new_applicants` | New | Sent |
+| The employer opens it | `screening` | Reviewing | Seen by employer |
+| The employer accepts | `interview` | Accepted | Accepted |
+| Later steps after accepting | `offered`, `hired` | Offer made, Hired | Offer made, Hired |
+| The employer rejects | `rejected` | Rejected | Not selected |
+| The seeker withdraws | `withdrawn` | Withdrawn | Withdrawn |
 
-**Demo mode:** `AI_MOCK=true` makes Fern follow a fixed script. It's a backup for presentations without internet or a key.
+`api-demo.js` implements the same contract in the browser, so switching modes changes no page code. The demo content in [`../shared/demo-data.json`](../shared/demo-data.json) is shared with the backend's seed script.
 
-## Path A: Typeform on the free plan
+## Fern on OpenRouter
 
-The free plan allows 10 questions and 10 responses a month, and most likely no branching logic or hidden fields. So this version is a single linear form. Set each question's **reference** (in the question settings) exactly as shown, because the backend maps answers by reference. Choice labels must also match exactly; the backend lowercases them.
+| Vercel setting | Value |
+| --- | --- |
+| `AI_API_KEY` | An OpenRouter key (starts with `sk-or-`) |
+| `AI_BASE_URL` | `https://openrouter.ai/api/v1` |
+| `AI_MODEL` | `openai/gpt-oss-120b` (the default) |
 
-| # | Question | Type | Reference | Required |
-| --- | --- | --- | --- | --- |
-| 1 | What’s your full name? *(add the privacy notice link in the description)* | Short text | `full_name` | Yes |
-| 2 | Nice to meet you, {{full name}}! Which area fits you best? | Multiple choice: `Engineering`, `Design`, `Marketing`, `Operations`, `Other` | `target_role` | Yes |
-| 3 | What do you do best? Your tech stack, a design project you’re proud of, or a result you’ve driven. | Long text | `fit_summary` | No |
-| 4 | How would you describe your experience level? | Multiple choice: `Intern`, `Junior`, `Mid`, `Senior`, `Lead` | `experience_level` | No |
-| 5 | A link to your work: GitHub, portfolio, Figma or LinkedIn | Website | `portfolio_url` | No |
-| 6 | A link to your resume (set sharing to “anyone with the link”) | Website | `resume_url` | No |
-| 7 | When could you start? | Multiple choice: `Immediately`, `In 2–4 weeks`, `In 1–3 months`, `Just exploring` | `availability` | No |
-| 8 | Best email to reach you? | Email | `email` | Yes |
-| 9 | Phone number | Phone number | `phone` | No |
-| 10 | May Fernway store and use these details to review your application? *(link the privacy notice)* | Yes/No | `consent_to_process` | Yes |
+- Fern replies in a strict JSON format (`reply`, `fields`, `complete`). The function checks every field before it reaches the page, and retries once if the provider rejects a reply for breaking the format.
+- Only the last 16 messages go to the model; earlier facts travel as a short summary.
+- Fern answers questions about Fernway from [`../shared/company.js`](../shared/company.js), so the AI never contradicts the site.
+- `AI_MOCK=true` makes Fern follow a fixed script. It's a backup for presentations without a key or internet.
+- Without `AI_BASE_URL`, the function uses Groq, where the site first ran.
+- **Privacy:** what seekers type in the AI chat is processed by the AI provider. The privacy notice says so.
 
-The endings text could read: "Thanks! Our team reviews new applications every week and replies within 7 days."
+## Integrations plan (all free)
 
-Then:
+| Tool | Role | Status |
+| --- | --- | --- |
+| **Notion** | The hiring board: a "Candidate ATS Tracker" database with a "Pipeline" board grouped by status, plus `Job`, `Employer` and `Employer Email` columns for the marketplace | Database and connection ready; `NOTION_TOKEN` and `NOTION_DATA_SOURCE_ID` are set on Render |
+| **HubSpot** | A CRM contact for each applicant | Waiting for the backend to fit the free plan's 10 custom properties ([codex/note-for-codex-sync-worker.md](codex/note-for-codex-sync-worker.md)) |
+| **Backend sync** | Copies applications to Notion and HubSpot (`SYNC_MODE=direct`) | Waiting for the worker to run on Render (same note) |
+| **Zapier** | 2-step Zaps only on the free plan, no webhooks | Planned, see below |
+| **Typeform** | Optional quick interest form | Planned, see below |
 
-1. Put the form ID (the end of its share link) in `src/config.js` under `typeform.formId`. The "Typeform" option then appears in the chat window.
-2. Keep `sandbox: true` while designing: nothing is recorded and your 10 responses are saved for real tests. Sandbox submissions don't reach the webhook either.
-3. The backend owner sets `TYPEFORM_FORM_ID` and `TYPEFORM_WEBHOOK_SECRET`, and points the Typeform webhook at `https://<public backend>/api/v1/webhooks/typeform` (see [`../../docs/integrations.md`](../../docs/integrations.md)).
-4. On a paid plan you can add the branch questions back, with references `tech_stack`, `github_url`, `case_study`, `design_system`, `acquisition_channels`, `key_metrics` and `linkedin_url`.
+### Zapier: tell employers about new applications
 
-## What was tested (2 October 2026)
+The backend sends no email. Instead, a free 2-step Zap:
 
-Run against the real backend, on a throwaway copy of its database:
+1. **Trigger:** Notion, **New Database Item**, in "Candidate ATS Tracker".
+2. **Action:** Gmail, **Send Email**. To: the `Employer Email` column. Subject: `New application for {Job}`. Body: the applicant's name, the job, and a link to <https://fernway-careers.vercel.app/employer.html>.
 
-- Guided chat from start to finish, using only the keyboard. The backend stored the candidate, the application (structured pay, `https` links, role answers, consent) and one idempotency receipt.
-- AI chat (demo mode) through the real `/api/chat` route, then review and send. Stored with `applied_via: AI recruiter`.
-- Consent left unticked: blocked with a message, and focus moves to the checkbox.
-- The backend's validation errors (bad email, unknown time zone, `http://` link) come back as field-level messages. The honeypot gets a fake success and nothing is forwarded. A missing idempotency key is rejected.
-- Phone layout (375 px, no sideways scrolling, chat goes full-screen), dark mode, and the production build.
+Demo employers have `.example` email addresses, which can't receive mail. To see the Zap work, sign up as an employer with your own address.
 
-Not tested here, because each needs an account: live Groq replies, a real Typeform, and Vercel deployment.
+### Typeform (optional): a quick interest form
+
+Typeform's free plan allows 10 questions and 10 responses a month, and has no webhooks. So the form goes to Notion through a second 2-step Zap (Typeform **New Entry** → Notion **Create Database Item**, with `Job` set to "Interest form") instead of the backend. It suits people who aren't ready to make an account; you then invite them to sign up.
+
+| # | Question | Type | Required |
+| --- | --- | --- | --- |
+| 1 | What's your full name? *(link the privacy notice in the description)* | Short text | Yes |
+| 2 | Which area fits you best? | Multiple choice: Engineering, Design, Marketing, Operations, Other | Yes |
+| 3 | What are you good at? A few skills or tools. | Long text | No |
+| 4 | How would you describe your experience level? | Multiple choice: Intern, Junior, Mid, Senior, Lead | No |
+| 5 | A link to your work: GitHub, portfolio, Figma or LinkedIn | Website | No |
+| 6 | A link to your resume (shared with "anyone with the link") | Website | No |
+| 7 | When could you start? | Multiple choice: Immediately, In 2–4 weeks, In 1–3 months, Just exploring | No |
+| 8 | Best email to reach you? | Email | Yes |
+| 9 | Phone number | Phone number | No |
+| 10 | May Fernway store these details and contact you about jobs? *(link the privacy notice)* | Yes/No | Yes |
+
+Ending: "Thanks! We'll email you an invitation to create your Fernway profile, so you can see the jobs that match you."
+
+Entries reach Notion only, not the backend's database. That's fine for a free plan, but they won't appear in the employer pages.
+
+## What was tested
+
+**5 October 2026, live site in demo mode** (in a browser, desktop and 375 px phone width, light and dark):
+
+- Sign up, build the profile with Fern's guided chat, ranked jobs, apply (consent required), employer notification, open (moves to Reviewing), accept with a message, and the seeker sees Accepted plus the bell.
+- Employer dashboard, applicants list and application page, including the accept dialog as a bottom sheet on phones.
+- Two tabs of the same browser, a seeker in one and an employer in the other: the seeker applied, and the employer's bell updated within a second without a reload.
+- No runtime errors on Vercel.
+
+**4 October 2026, Fern on OpenRouter:** six question-and-answer scenarios against the live `/api/chat`, all passing.
+
+**Not tested yet:** live mode (waiting for the backend's `/api/v2`), the HubSpot and Notion sync, the Zaps, and Typeform.

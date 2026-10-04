@@ -3,7 +3,7 @@
 // applicants for an employer.
 
 import { EXPERIENCE_LEVELS } from '../../shared/options.js';
-import { areaLabel, listAnd } from './format.js';
+import { areaLabel, skillList } from './format.js';
 
 const LEVELS = EXPERIENCE_LEVELS.map((level) => level.value);
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -40,7 +40,10 @@ export function matchJob(person, job, { viewer = 'seeker' } = {}) {
   const words = WORDING[viewer];
   if (!person) return null;
   const skills = new Set((person.skills ?? []).map((skill) => String(skill).toLowerCase()));
-  const text = [person.headline, person.about, person.role_detail].filter(Boolean).join('\n');
+  // Skills count from the skills list and the headline only. Not the longer About text,
+  // where people also write things like "learning React", and which the employer's
+  // applicant list doesn't get, so both sides always see the same match.
+  const text = person.headline ?? '';
   if (!skills.size && !text && !person.target_role && !person.experience_level) return null;
 
   const jobSkills = job.skills ?? [];
@@ -68,7 +71,7 @@ export function matchJob(person, job, { viewer = 'seeker' } = {}) {
     const wanted = Math.min(jobSkills.length, 5);
     points += Math.min(3, (3 * matchedSkills.length) / wanted);
     if (matchedSkills.length) {
-      reasons.push(words.skills(matchedSkills.length, listAnd(matchedSkills.slice(0, 4))));
+      reasons.push(words.skills(matchedSkills.length, skillList(matchedSkills)));
     }
   }
   // A job outside your area with none of your skills isn't a match, whatever its level.
