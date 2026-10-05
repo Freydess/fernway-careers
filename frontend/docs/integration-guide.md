@@ -34,7 +34,7 @@ The same code runs on Vercel (`api/*.js`) and in `npm.cmd run dev` (`vite.config
 
 ## The marketplace API (`/api/v2`)
 
-The full contract is in [codex/note-for-codex-marketplace.md](codex/note-for-codex-marketplace.md). In short:
+The full contract is in [codex/brief-for-codex.md](codex/brief-for-codex.md). In short:
 
 - **Accounts:** email and password, kept by the backend, with an HTTP-only `fw_session` cookie. Two roles: `seeker` and `employer`.
 - **Seekers:** a profile (`GET`/`PUT /me/profile`), open jobs (`GET /jobs`), `POST /jobs/{id}/apply` with consent, and their applications with withdraw.
@@ -74,8 +74,8 @@ Applying copies the seeker's profile into the backend's existing `Candidate` and
 | Tool | Role | Status |
 | --- | --- | --- |
 | **Notion** | The hiring board: a "Candidate ATS Tracker" database with a "Pipeline" board grouped by status, plus `Job`, `Employer` and `Employer Email` columns for the marketplace | Database and connection ready; `NOTION_TOKEN` and `NOTION_DATA_SOURCE_ID` are set on Render |
-| **HubSpot** | A CRM contact for each applicant | Waiting for the backend to fit the free plan's 10 custom properties ([codex/note-for-codex-sync-worker.md](codex/note-for-codex-sync-worker.md)) |
-| **Backend sync** | Copies applications to Notion and HubSpot (`SYNC_MODE=direct`) | Waiting for the worker to run on Render (same note) |
+| **HubSpot** | A CRM contact for each applicant | The backend now uses exactly 10 custom properties. Next: create the free account, a private app token, and the properties from `docs/hubspot-properties.json` |
+| **Backend sync** | Copies applications to Notion and HubSpot (`SYNC_MODE=direct`) | The worker now starts with the API on Render (`python -m app.start`). Switch on once HubSpot is ready. |
 | **Zapier** | 2-step Zaps only on the free plan, no webhooks | Planned, see below |
 | **Typeform** | Optional quick interest form | Planned, see below |
 
@@ -120,4 +120,6 @@ Entries reach Notion only, not the backend's database. That's fine for a free pl
 
 **4 October 2026, Fern on OpenRouter:** six question-and-answer scenarios against the live `/api/chat`, all passing.
 
-**Not tested yet:** live mode (waiting for the backend's `/api/v2`), the HubSpot and Notion sync, the Zaps, and Typeform.
+**5 October 2026, live mode on a computer** (the backend's `/api/v2` on a throwaway database, the site with `?backend=live`): sign up as an employer and post a job, sign up as a seeker and save a profile, ranked jobs, apply, sign out and in (and a wrong password), the employer's notification, open (Reviewing), accept with a message, mark an offer, and the seeker's notifications and status. The API answers match the contract, the session cookie flags are right, and requests from other sites are refused. The backend's own tests pass (58).
+
+**Not tested yet:** live mode on Render and Neon (after the next push), the HubSpot and Notion sync, the Zaps, and Typeform.

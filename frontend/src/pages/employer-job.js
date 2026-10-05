@@ -99,6 +99,11 @@ function render(job) {
     event.preventDefault();
     const value = (name) => f[name].control.value.trim();
     const description = value('description');
+    // An empty "From" keeps pay private. A single figure is fine: the backend wants both
+    // ends of the range, so an empty "To" copies "From".
+    const hasSalary = value('salary_min') !== '';
+    const salaryMin = hasSalary ? Number(value('salary_min')) : null;
+    const salaryMax = hasSalary && value('salary_max') !== '' ? Number(value('salary_max')) : salaryMin;
     const input = {
       title: value('title'),
       area: value('area'),
@@ -109,10 +114,10 @@ function render(job) {
       description: description === DESCRIPTION_TEMPLATE.trim() ? '' : description,
       levels: [...form.querySelectorAll('input[name="levels"]:checked')].map((input) => input.value),
       skills: skills.getValue(),
-      salary_min: value('salary_min') === '' ? null : Number(value('salary_min')),
-      salary_max: value('salary_max') === '' ? null : Number(value('salary_max')),
-      salary_currency: value('salary_min') === '' ? null : value('salary_currency'),
-      salary_period: value('salary_min') === '' ? null : value('salary_period'),
+      salary_min: salaryMin,
+      salary_max: salaryMax,
+      salary_currency: hasSalary ? value('salary_currency') : null,
+      salary_period: hasSalary ? value('salary_period') : null,
       status: form.elements.status?.value ?? 'open',
     };
     const errors = [];

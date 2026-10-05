@@ -130,4 +130,4 @@ docs/                     Integration guide, blueprint review, notes for the bac
 
 [docs/screenshots/](docs/screenshots/) shows the first version of the site, a single company's careers page, before Fernway became a marketplace.
 
-See [docs/integration-guide.md](docs/integration-guide.md) for how the pieces connect, [docs/codex/](docs/codex/) for the backend API contract, and [docs/blueprint-issues.md](docs/blueprint-issues.md) for problems found in the original blueprint.
+See [docs/integration-guide.md](docs/integration-guide.md) for how the pieces connect, [docs/codex/brief-for-codex.md](docs/codex/brief-for-codex.md) for the backend work and its API contract, and [docs/blueprint-issues.md](docs/blueprint-issues.md) for problems found in the original blueprint.

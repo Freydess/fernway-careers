@@ -1,6 +1,6 @@
 // The real marketplace API: the backend's /api/v2, reached through the site's own origin
 // (Vercel proxies /api/v2 to Render; Vite does the same in development). The session is
-// an HTTP-only cookie the browser sends automatically. Contract: frontend/docs/note-for-codex-marketplace.md
+// an HTTP-only cookie the browser sends automatically. Contract: frontend/docs/codex/brief-for-codex.md
 
 import { ApiError } from './errors.js';
 
