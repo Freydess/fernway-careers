@@ -6,10 +6,10 @@ Keep `SYNC_MODE=disabled` during local development. HubSpot signup is deferred u
 
 | Input | Local storage | HubSpot contact property | Notion property / type |
 | --- | --- | --- | --- |
-| `full_name` | Candidate full name | `candidate_full_name` / text | `Name` / Title |
+| `full_name` | Candidate full name / application snapshot | `firstname`, `lastname` / standard; split at last space | `Name` / Title |
 | `email` | Candidate unique normalized email | `email` / standard | `Email` / Email |
 | `phone` | Candidate phone | `phone` / standard | `Phone` / Phone |
-| `timezone` | Candidate timezone | `candidate_timezone` / text | `Timezone` / Rich text |
+| `timezone` | Candidate timezone / application snapshot | Not sent | `Timezone` / Rich text |
 | `target_role` | Role category; candidate/role uniqueness | `candidate_target_role` / select | `Role` / Select |
 | `role_detail` | Particular role or focus | `candidate_role_detail` / text | `Role Details` / Rich text |
 | `experience_level` | Label, separately from years | `candidate_experience_level` / select | `Experience` / Select |
@@ -55,17 +55,17 @@ Set `SYNC_MODE=direct` only after both integrations are ready, then restart the 
 ### HubSpot (deferred until website/signup is ready)
 
 1. Create your account later, then create an app/token authorized to read and write CRM contacts. This runtime uses HubSpot's contact API directly, rather than a Codex plugin session.
-2. Create the `candidate_recruitment` property group and the custom contact properties described in `docs/hubspot-properties.json`. The JSON is a setup specification: create the group and each property separately in HubSpot, or use the corresponding CRM properties endpoints with an authorized token. It is not a single API request.
-3. Set `HUBSPOT_ACCESS_TOKEN` privately in `.env`. Confirm standard `email`, `phone`, and `website` properties exist. Validate the custom property's internal names and enumeration values exactly.
+2. Create the `candidate_recruitment` property group and exactly the ten custom contact properties described in `docs/hubspot-properties.json`. The JSON is a setup specification: create the group and each property separately in HubSpot, or use the corresponding CRM properties endpoints with an authorized token. It is not a single API request. Neither `candidate_full_name` nor `candidate_timezone` is used.
+3. Set `HUBSPOT_ACCESS_TOKEN` privately in `.env` or Render. Confirm standard `email`, `firstname`, `lastname`, `phone`, and `website` properties exist. Validate the custom property's internal names and enumeration values exactly. A one-word name is sent as `firstname`, with an empty `lastname`.
 4. Test with a synthetic email. The adapter looks up a contact by email, patches existing contacts, and creates missing contacts. It preserves existing lifecycle values; new contacts receive `lead`.
 5. Confirm that resubmitting the candidate does not create another contact and that your applicant data appears in the custom properties.
 
-One contact represents a person; its application-related properties reflect the latest locally updated application for that candidate. Notion and the local database retain one record per role. Real multiple job openings within one discipline would require a `job_id` dimension in the local schema. [HubSpot contact read/create/update behavior](https://developers.hubspot.com/docs/api-reference/legacy/crm/objects/contacts/guide).
+One contact represents a person; its application-related properties reflect the latest locally updated application for that candidate. Notion and the local database retain one record per application. Marketplace applications use a `job_id`, and `candidate_role_detail` contains `<job title> at <employer>` without adding any custom properties. Legacy v1 applications retain their role detail. [HubSpot contact read/create/update behavior](https://developers.hubspot.com/docs/api-reference/legacy/crm/objects/contacts/guide).
 
 ### Notion
 
 1. Create a private Candidate ATS Tracker table and an internal integration with read, insert, and update capabilities. Share this table with the integration.
-2. Configure the property names and types from `docs/notion-schema.json` in the Notion UI. The file is a specification, not a complete API creation payload. Set the board's grouping property to `Status`.
+2. Configure the property names and types from `docs/notion-schema.json` in the Notion UI, including the text properties `Job`, `Employer`, and `Employer Email` for marketplace applications. The file is a specification, not a complete API creation payload. Set the board's grouping property to `Status`.
 3. Create all seven exact status labels: `New Applicants`, `Screening`, `Interview`, `Offered`, `Hired`, `Rejected`, `Withdrawn`. Configure role and experience options exactly as specified. Use a URL property for Resume in this implementation.
 4. Obtain the table's **data source ID**, set `NOTION_DATA_SOURCE_ID`, and set the integration token in `NOTION_TOKEN`. Keep the pinned `NOTION_API_VERSION=2025-09-03` unless you deliberately update and test the adapter.
 5. Test a synthetic application and a status change. The adapter searches by `Application ID`, creates when absent, and patches an existing page. It stores the returned page ID locally. Multiple matches are treated as a configuration/data error.
@@ -105,3 +105,7 @@ If Typeform is connected directly to a Zap instead of this backend's signed webh
 Run the worker after enabling a mode. Applications already saved while syncing was disabled can be queued through `POST /api/v1/applications/{id}/sync`. Inspect `GET /api/v1/sync-jobs` for success, `retry`, or `dead`. Retry failed jobs after fixing the underlying credentials/schema. If a newer revision exists, queue a fresh application sync instead of replaying an older snapshot.
 
 Restart both the API and worker after editing `.env`. Workers only claim targets belonging to the current mode; disabled mode processes no jobs. Changing modes leaves jobs for the previous mode in the database; review them before switching back. Start with one worker and verify hosted operation before increasing concurrency.
+
+The Docker startup now migrates the database, starts the API and worker together, restarts an exited worker every five seconds in enabled modes, and stops both children when the container stops. Disabled mode logs `External sync is disabled` once and leaves the API running. Render only processes jobs while its free web service is awake; requests wake the service. Use the v1 application sync endpoint to queue a fresh revision when needed. API writes and notification delivery remain local even when external sync is disabled.
+
+The agreed deployment uses `SYNC_MODE=direct` with HubSpot and Notion credentials on Render. Typeform entries can reach Notion through the separate Zapier connection. Zapier can watch new Notion rows and email the `Employer Email`; the backend itself sends no email. See [marketplace setup and handoff](marketplace-handoff.md).

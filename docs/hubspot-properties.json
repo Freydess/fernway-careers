@@ -6,14 +6,6 @@
   },
   "properties": [
     {
-      "name": "candidate_full_name",
-      "label": "Candidate full name",
-      "type": "string",
-      "fieldType": "text",
-      "groupName": "candidate_recruitment",
-      "description": "Applicant intake data; managed by the personalized employment backend."
-    },
-    {
       "name": "candidate_target_role",
       "label": "Candidate target role",
       "type": "enumeration",
@@ -196,14 +188,6 @@
     {
       "name": "candidate_application_id",
       "label": "Candidate application ID",
-      "type": "string",
-      "fieldType": "text",
-      "groupName": "candidate_recruitment",
-      "description": "Applicant intake data; managed by the personalized employment backend."
-    },
-    {
-      "name": "candidate_timezone",
-      "label": "Candidate timezone",
       "type": "string",
       "fieldType": "text",
       "groupName": "candidate_recruitment",

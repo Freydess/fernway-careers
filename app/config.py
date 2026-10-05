@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default_factory=list)
     max_body_bytes: int = Field(default=65536, ge=1024, le=1048576)
     max_sync_attempts: int = Field(default=8, ge=1, le=20)
+    session_cookie_secure: bool = True
+    allowed_origins: list[str] = Field(default_factory=lambda: ["https://fernway-careers.vercel.app", "http://localhost:5173"])
 
     @model_validator(mode="after")
     def validate_config(self):

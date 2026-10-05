@@ -89,6 +89,18 @@
         "Rejected",
         "Withdrawn"
       ]
+    },
+    {
+      "name": "Job",
+      "type": "rich_text"
+    },
+    {
+      "name": "Employer",
+      "type": "rich_text"
+    },
+    {
+      "name": "Employer Email",
+      "type": "rich_text"
     }
   ]
 }

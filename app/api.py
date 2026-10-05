@@ -19,6 +19,7 @@ from app.models import Application, Candidate, StatusEvent, SyncJob, utcnow
 from app.schemas import Intake, Status, StatusChange
 from app.service import application_data, change_status, enqueue, submit
 from app.typeform import parse_typeform
+from app.marketplace import MarketplaceMiddleware, install as install_marketplace
 
 
 class BodyLimitMiddleware:
@@ -69,11 +70,12 @@ def create_app(settings=None, engine=None):
         if owns_engine:
             engine.dispose()
 
-    app = FastAPI(title="Personalized Employment API", version="1.0.0", lifespan=lifespan)
+    app = FastAPI(title="Fernway Employment API", version="2.0.0", lifespan=lifespan)
     app.state.settings, app.state.engine, app.state.session_factory = settings, engine, factory
     app.add_middleware(BodyLimitMiddleware, limit=settings.max_body_bytes)
     if settings.cors_origins:
-        app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["GET", "POST", "PATCH"], allow_headers=["Authorization", "Content-Type", "Idempotency-Key"])
+        app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"], allow_headers=["Authorization", "Content-Type", "Idempotency-Key"])
+    app.add_middleware(MarketplaceMiddleware, allowed_origins=settings.allowed_origins)
     security = HTTPBearer(auto_error=False)
 
     def authenticate(credentials, expected):
@@ -90,6 +92,11 @@ def create_app(settings=None, engine=None):
     async def validation_error(_request, error):
         return JSONResponse({"detail": safe_validation_errors(error.errors())}, status_code=422)
 
+    @app.exception_handler(Exception)
+    async def unexpected_error(request, _error):
+        headers = {"Cache-Control": "no-store"} if request.url.path.startswith("/api/v2") else {}
+        return JSONResponse({"detail": "An internal server error occurred."}, status_code=500, headers=headers)
+
     @app.get("/health", tags=["health"])
     def health():
         return {"status": "ok"}
@@ -100,7 +107,7 @@ def create_app(settings=None, engine=None):
             with factory() as session:
                 revision = session.execute(text("SELECT version_num FROM alembic_version")).scalar()
                 session.execute(select(Application.id).limit(1))
-                if revision != "0001_initial":
+                if revision != "0002_marketplace":
                     raise ValueError("Migration required")
         except Exception:
             raise HTTPException(503, "Database is not ready; run Alembic migrations.") from None
@@ -200,4 +207,5 @@ def create_app(settings=None, engine=None):
             job.updated_at = utcnow()
             return {"job_id": job.id, "state": job.state}
 
+    install_marketplace(app, admin)
     return app

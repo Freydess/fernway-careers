@@ -1,10 +1,12 @@
-# Personalized Employment Backend
+# Fernway Employment Backend
 
-FastAPI backend and relational database for the supplied recruitment blueprint. The local configuration uses SQLite and disables external integrations. HubSpot setup is deferred until the website is ready. The frontend can later connect through a server or a signed Typeform webhook.
+FastAPI backend for Fernway's two-sided job marketplace, with seeker and employer accounts, profiles, job search, applications and in-app notifications under `/api/v2`. The existing intake, Typeform, admin review and sync API remains under `/api/v1`. Local development uses SQLite and disables external integrations. See [the marketplace handoff](docs/marketplace-handoff.md) for the complete contract, Render settings, local frontend testing, and ready-to-paste Neon migration/seed commands.
 
 ## Current result
 
-- Separate candidates and role applications, with email normalization and database uniqueness constraints.
+- Separate candidates and applications, with legacy candidate/role and marketplace candidate/job uniqueness.
+- Cookie sessions, Argon2id passwords, profile snapshots, ownership checks, CSRF protection, and persistent rate limits.
+- Employer job posting and review, versioned decisions, and account-specific notifications.
 - Strict intake validation, explicit consent, separate portfolio/resume fields, experience and compensation types.
 - Signed Typeform completion webhooks and API idempotency keys.
 - Admin review, allowed hiring-stage transitions, optimistic version checks, and status history.
@@ -61,11 +63,11 @@ Do not commit `.env` or `data/`. They are ignored. Separate random admin and int
 | `GET /api/v1/sync-jobs` | Admin bearer token | Inspect paginated job outcomes without payloads or lease secrets |
 | `POST /api/v1/sync-jobs/{id}/retry` | Admin bearer token | Retry a failed job when no newer revision exists |
 
-Use `Authorization: Bearer <token>`. Intake and admin permissions use different secrets. Do not embed either secret in a website, Typeform hidden field, or client-side chatbot. Public website submission needs a server-side intermediary with its own abuse prevention, or the signed Typeform route. CORS starts empty and can be explicitly configured for an internal client.
+V1 uses `Authorization: Bearer <token>`. Intake and admin permissions use different secrets. Do not embed either secret in a website, Typeform hidden field, or client-side chatbot. V2 uses HTTP-only sessions through the same-origin Vite/Vercel proxy, and never needs an admin/intake token in the browser. CORS starts empty and can be explicitly configured for an internal client.
 
 `examples/application.json` is a valid payload. Required fields: `full_name`, `email`, `target_role`, and `consent_to_process: true`. Optional fields may be absent; reapplication is a full intake replacement, so omitted optional values are cleared. API validation rejects unknown keys, invalid URLs, unsupported choices, and inconsistent compensation. Resume and portfolio URLs must use HTTPS; the backend does not download them.
 
-Email is trimmed and lowercased for deduplication; plus suffixes and dots are preserved. An identical normalized payload and idempotency key returns the existing submission with `duplicate: true`. Reusing the key with different data returns 409. A new key updates the same candidate/role application and increments its version. A different role creates a new application for the same candidate. Terminal applications retain their terminal stage when resubmitted; distinct job postings/recruitment rounds would need a future `job_id` dimension.
+V1 email is trimmed and lowercased for deduplication; plus suffixes and dots are preserved. An identical normalized payload and idempotency key returns the existing submission with `duplicate: true`. Reusing the key with different data returns 409. A new key updates the same legacy candidate/role application and increments its version. A different role creates a new application for the same candidate. Terminal applications retain their terminal stage when resubmitted. V2 stores a distinct application per job and rejects duplicate applications; v1 intake does not edit marketplace applications.
 
 Status update example:
 
@@ -77,7 +79,7 @@ Stages: `new_applicants → screening → interview → offered → hired`. Acti
 
 ## Database
 
-Five tables: `candidates`, `applications`, `intake_receipts`, `status_events`, and `sync_jobs`. Foreign keys, stage/role checks, compensation/experience bounds, candidate-email uniqueness, candidate/role uniqueness, event uniqueness, and job-revision uniqueness are defined in the migration. Timestamps use UTC; responses with application timestamps use the `Z` suffix. Monetary values use decimals, not binary floating point.
+The original tables (`candidates`, `applications`, `intake_receipts`, `status_events`, `sync_jobs`) are joined by `users`, `sessions`, `employers`, `seeker_profiles`, `jobs`, `notifications`, and `rate_limit_buckets`. Foreign keys, stage/role checks, compensation/experience bounds, partial candidate/role and candidate/job unique indexes, event uniqueness, and job-revision uniqueness are defined in migrations. Timestamps use UTC and responses use the `Z` suffix. Monetary values use decimals, not binary floating point.
 
 ```powershell
 .\scripts\run.ps1 migrate
@@ -86,7 +88,7 @@ Five tables: `candidates`, `applications`, `intake_receipts`, `status_events`, a
 
 Changing `DATABASE_URL` to `postgresql+psycopg://...` and running migrations creates the same schema on PostgreSQL. Changing the URL does **not** copy SQLite data. A data transfer would be a separate step.
 
-`compose.yaml` provides PostgreSQL, a migration job, API, and worker. For that optional deployment, add a random URL-safe `POSTGRES_PASSWORD` to `.env`, install Docker, and run `docker compose up --build`. Docker and a PostgreSQL server are not available on this computer, so this configuration has not been executed here. PostgreSQL migration SQL generation is tested; live PostgreSQL transactions are not yet verified.
+`compose.yaml` provides PostgreSQL, a migration job, API, and a standalone worker. The API Docker image now includes its supervised worker. For that optional deployment, add a random URL-safe `POSTGRES_PASSWORD` to `.env`, install Docker, and run `docker compose up --build api` to start the API, its worker, and database dependencies. Docker and a PostgreSQL server are not available on this computer, so this configuration has not been executed here. PostgreSQL migration SQL generation is tested; live PostgreSQL transactions are not yet verified.
 
 ## Integrations and worker
 
@@ -106,4 +108,4 @@ The API acknowledges durable local storage, not completed external delivery. Ins
 
 Tests use a migrated temporary SQLite database and mock external HTTP responses. They cover auth separation, validation, concurrent duplicate delivery, transaction rollback, multiple roles, status/history behavior, signed webhooks, mappings, retry ordering, permanent errors, lease recovery, and PostgreSQL migration SQL generation. No tests require real credentials or create cloud records.
 
-Before collecting real candidates: connect the frontend/Typeform form, configure the chosen integrations, test resume access, and verify the live account schemas. Hosted operation also needs HTTPS, rate limiting/abuse controls, individual reviewer authentication, backups, and an agreed retention/deletion process across local and external copies. Those deployment controls are not configured by this local implementation. A complete AI recruiter, binary resume upload/storage/scanning, matching against real vacancies, notifications, and bidirectional board edits are outside this delivery.
+Local implementation and tests are complete; cloud deployment and frontend live-mode testing remain separate steps. In-app notifications are implemented; email notifications are planned through Zapier from Notion. Password reset, email verification, binary resume uploads, multiple recruiters per company, employer seeker search, direct user messaging, and bidirectional Notion edits remain outside this version. Matching and Fern's profile assistant run in the existing frontend.

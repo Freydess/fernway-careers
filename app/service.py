@@ -10,7 +10,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 
 from app.db import begin_write
-from app.models import Application, Candidate, IntakeReceipt, StatusEvent, SyncJob, new_id, utcnow
+from app.models import Application, Candidate, Employer, IntakeReceipt, Job, StatusEvent, SyncJob, User, new_id, utcnow
 
 
 TRANSITIONS = {
@@ -34,6 +34,13 @@ def application_data(session, application):
     candidate = session.get(Candidate, application.candidate_id)
     result = {column.name: serial(getattr(application, column.name)) for column in Application.__table__.columns}
     result.update({key: getattr(candidate, key) for key in ("email", "full_name", "phone", "timezone", "hubspot_contact_id")})
+    if application.job_id:
+        snapshot = application.profile_snapshot or {}
+        result.update({key: snapshot.get(key) for key in ("email", "full_name", "phone", "timezone")})
+        job = session.get(Job, application.job_id)
+        employer = session.get(Employer, job.employer_id)
+        result.update(job_title=job.title, employer_name=employer.name,
+                      employer_email=session.get(User, employer.owner_user_id).email)
     return result
 
 
@@ -69,7 +76,7 @@ def submit(factory, intake, source, event_key, targets):
                 index_elements=[Candidate.email], set_={**candidate_values, "updated_at": now}
             ).returning(Candidate.id))
             app_values = {key: getattr(intake, key) for key in type(intake).model_fields if key not in candidate_values}
-            application = session.scalar(select(Application).where(Application.candidate_id == candidate_id, Application.target_role == intake.target_role).with_for_update())
+            application = session.scalar(select(Application).where(Application.candidate_id == candidate_id, Application.target_role == intake.target_role, Application.job_id.is_(None)).with_for_update())
             if application:
                 for key, value in app_values.items():
                     setattr(application, key, value)

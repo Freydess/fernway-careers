@@ -23,20 +23,22 @@ def salary(data):
 
 
 def hubspot_properties(data):
+    name = data["full_name"].strip().rsplit(None, 1)
+    role_detail = f"{data['job_title']} at {data['employer_name']}" if data.get("job_title") else data.get("role_detail") or ""
     properties = {
         "email": data["email"], "phone": data.get("phone") or "", "website": data.get("portfolio_url") or "",
-        "candidate_full_name": data["full_name"], "candidate_target_role": data["target_role"],
-        "candidate_role_detail": data.get("role_detail") or "", "candidate_experience_level": data.get("experience_level") or "",
+        "firstname": name[0], "lastname": name[1] if len(name) > 1 else "", "candidate_target_role": data["target_role"],
+        "candidate_role_detail": role_detail, "candidate_experience_level": data.get("experience_level") or "",
         "candidate_experience_years": data["experience_years"] if data.get("experience_years") is not None else "", "candidate_resume_url": data.get("resume_url") or "",
         "candidate_salary_expectations": salary(data), "candidate_availability": data.get("availability") or "",
         "candidate_fit_summary": data.get("fit_summary") or "", "candidate_application_status": data["status"],
-        "candidate_application_id": data["id"], "candidate_timezone": data.get("timezone") or "",
+        "candidate_application_id": data["id"],
     }
     return {key: str(value) for key, value in properties.items()}
 
 
 def notion_properties(data):
-    return {
+    properties = {
         "Name": {"title": rich_text(data["full_name"])}, "Email": {"email": data["email"]},
         "Phone": {"phone_number": data.get("phone")}, "Role": {"select": {"name": data["target_role"].capitalize()}},
         "Experience": {"select": {"name": data["experience_level"].capitalize()} if data.get("experience_level") else None},
@@ -50,6 +52,11 @@ def notion_properties(data):
         "Role Details": {"rich_text": rich_text(data.get("role_detail"))},
         "Role Answers": {"rich_text": rich_text("\n".join(f"{key}: {value}" for key, value in data.get("role_answers", {}).items()))},
     }
+    if data.get("job_id"):
+        properties.update({name: {"rich_text": rich_text(data.get(key))} for name, key in (
+            ("Job", "job_title"), ("Employer", "employer_name"), ("Employer Email", "employer_email")
+        )})
+    return properties
 
 
 class Integrations:
