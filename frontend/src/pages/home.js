@@ -14,6 +14,8 @@ if (user) {
     if (user.role === 'seeker' && !isEmployerLink) Object.assign(link, { href: 'profile.html', textContent: 'Go to your profile' });
     if (user.role === 'employer' && isEmployerLink) Object.assign(link, { href: 'employer-job.html', textContent: 'Post a job' });
   }
+  // The interest form is for people without an account.
+  document.querySelector('[data-interest-form]')?.remove();
 }
 
 document.querySelector('[data-area-select]').append(...ROLE_AREAS.map((area) => h('option', { value: area.value }, areaLabel(area.value))));

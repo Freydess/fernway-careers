@@ -1,6 +1,6 @@
 # Integration guide: how Fernway's pieces connect
 
-Updated 5 October 2026, for the two-sided marketplace. All services are on free plans.
+Updated 6 October 2026, for the two-sided marketplace. All services are on free plans.
 
 ## The big picture
 
@@ -73,39 +73,60 @@ Applying copies the seeker's profile into the backend's existing `Candidate` and
 
 | Tool | Role | Status |
 | --- | --- | --- |
-| **Notion** | The hiring board: a "Candidate ATS Tracker" database with a "Pipeline" board grouped by status, plus `Job`, `Employer` and `Employer Email` columns for the marketplace | Database and connection ready; `NOTION_TOKEN` and `NOTION_DATA_SOURCE_ID` are set on Render |
-| **HubSpot** | A CRM contact for each applicant | The backend now uses exactly 10 custom properties. Next: create the free account, a private app token, and the properties from `docs/hubspot-properties.json` |
-| **Backend sync** | Copies applications to Notion and HubSpot (`SYNC_MODE=direct`) | The worker now starts with the API on Render (`python -m app.start`). Switch on once HubSpot is ready. |
-| **Zapier** | 2-step Zaps only on the free plan, no webhooks | Planned, see below |
-| **Typeform** | Optional quick interest form | Planned, see below |
+| **Notion** | The hiring board: a "Candidate ATS Tracker" database with a "Pipeline" board grouped by status, plus `Job`, `Employer` and `Employer Email` columns for the marketplace | Working. `Employer Email` must stay a **Text** column: the backend sends it as text, and Notion rejects the whole row if the column is the Email type. |
+| **HubSpot** | A CRM contact for each applicant | Working. The 10 custom properties from `docs/hubspot-properties.json` exist (`scripts/setup_hubspot.py` can recreate them). |
+| **Backend sync** | Copies applications to Notion and HubSpot (`SYNC_MODE=direct`) | Working. The worker starts with the API on Render (`python -m app.start`). |
+| **Zapier** | 2-step Zaps only on the free plan, no webhooks | Working: the employer email Zap. The Typeform Zap is set up by hand, see below. |
+| **Typeform** | Quick interest form for people without an account | The form is live: <https://form.typeform.com/to/bjOIEvvs> |
+| **UptimeRobot** | Checks the backend every 5 minutes | A **Keyword** monitor on `/health` looking for `"status":"ok"`. A plain HTTP monitor sends `HEAD`, which the backend answers with 405, so it always showed "Down". |
 
 ### Zapier: tell employers about new applications
 
 The backend sends no email. Instead, a free 2-step Zap:
 
 1. **Trigger:** Notion, **New Database Item**, in "Candidate ATS Tracker".
-2. **Action:** Gmail, **Send Email**. To: the `Employer Email` column. Subject: `New application for {Job}`. Body: the applicant's name, the job, and a link to <https://fernway-careers.vercel.app/employer.html>.
+2. **Action:** Gmail, **Send Email**. To: the `Employer Email` column. Subject: `New application for {Job}` (keep the space before the job). Body: the applicant's name, the job, and a link to <https://fernway-careers.vercel.app/employer.html>.
 
 Demo employers have `.example` email addresses, which can't receive mail. To see the Zap work, sign up as an employer with your own address.
 
-### Typeform (optional): a quick interest form
+### Typeform: a quick interest form
 
-Typeform's free plan allows 10 questions and 10 responses a month, and has no webhooks. So the form goes to Notion through a second 2-step Zap (Typeform **New Entry** → Notion **Create Database Item**, with `Job` set to "Interest form") instead of the backend. It suits people who aren't ready to make an account; you then invite them to sign up.
+The **Fernway interest form** is live at <https://form.typeform.com/to/bjOIEvvs>. It was created through the Typeform API on 6 October 2026. Typeform's free plan allows 10 questions and 10 responses a month, and has no webhooks. So the form goes to Notion through a second 2-step Zap instead of the backend. It suits people who aren't ready to make an account; you then invite them to sign up.
 
 | # | Question | Type | Required |
 | --- | --- | --- | --- |
-| 1 | What's your full name? *(link the privacy notice in the description)* | Short text | Yes |
-| 2 | Which area fits you best? | Multiple choice: Engineering, Design, Marketing, Operations, Other | Yes |
+| 1 | What's your full name? *(the description links the privacy notice)* | Short text | Yes |
+| 2 | Which area fits you best? | One choice: Engineering, Design, Marketing, Operations, Other | Yes |
 | 3 | What are you good at? A few skills or tools. | Long text | No |
-| 4 | How would you describe your experience level? | Multiple choice: Intern, Junior, Mid, Senior, Lead | No |
+| 4 | How would you describe your experience level? *(the description explains each level)* | One choice: Intern, Junior, Mid, Senior, Lead | No |
 | 5 | A link to your work: GitHub, portfolio, Figma or LinkedIn | Website | No |
 | 6 | A link to your resume (shared with "anyone with the link") | Website | No |
-| 7 | When could you start? | Multiple choice: Immediately, In 2–4 weeks, In 1–3 months, Just exploring | No |
+| 7 | When could you start? | One choice: Immediately, In 2–4 weeks, In 1–3 months, Just exploring | No |
 | 8 | Best email to reach you? | Email | Yes |
-| 9 | Phone number | Phone number | No |
-| 10 | May Fernway store these details and contact you about jobs? *(link the privacy notice)* | Yes/No | Yes |
+| 9 | Phone number *(Thailand preselected)* | Phone number | No |
+| 10 | May Fernway store these details and contact you about jobs? *(links the privacy notice)* | One choice: "Yes, I agree" | Yes |
 
-Ending: "Thanks! We'll email you an invitation to create your Fernway profile, so you can see the jobs that match you."
+- **Consent is enforced.** Question 10 has a single required option, so the form can't be sent without agreeing, and a "No" never reaches Notion. Typeform's "send partial responses to integrations" setting is off, so people who stop halfway aren't sent either.
+- **Choice labels match the Notion select options exactly** ("Other", not the site's "Something else"; "Mid", not "Mid-level"), so the Zap can fill `Role` and `Experience` without creating new options.
+- Ending: "Thanks! We'll email you an invitation to create your Fernway profile, so you can see the jobs that match you.", with a **Visit Fernway** button to the site.
+
+**The Zap** (Typeform **New Entry** → Notion **Create Data Source Item** in "Candidate ATS Tracker"):
+
+| Notion column | Value |
+| --- | --- |
+| Name | Q1, full name |
+| Email | Q8 |
+| Phone | Q9 |
+| Role | Q2 |
+| Experience | Q4 |
+| Portfolio | Q5 |
+| Resume | Q6 |
+| Availability | Q7 |
+| Summary Notes | `Skills: ` followed by Q3 |
+| Status | New Applicants |
+| Job | `Interest form` (typed in) |
+| Employer | `Fernway` (typed in) |
+| Employer Email | The team's own Gmail address, so the employer email Zap tells the team about each new entry |
 
 Entries reach Notion only, not the backend's database. That's fine for a free plan, but they won't appear in the employer pages.
 
@@ -122,4 +143,8 @@ Entries reach Notion only, not the backend's database. That's fine for a free pl
 
 **5 October 2026, live mode on a computer** (the backend's `/api/v2` on a throwaway database, the site with `?backend=live`): sign up as an employer and post a job, sign up as a seeker and save a profile, ranked jobs, apply, sign out and in (and a wrong password), the employer's notification, open (Reviewing), accept with a message, mark an offer, and the seeker's notifications and status. The API answers match the contract, the session cookie flags are right, and requests from other sites are refused. The backend's own tests pass (58).
 
-**Not tested yet:** live mode on Render and Neon (after the next push), the HubSpot and Notion sync, the Zaps, and Typeform.
+**5 October 2026, live site on Render and Neon:** the backend migrated Neon on start, the demo data was seeded, and a seeker applied and an employer accepted through https://fernway-careers.vercel.app. The site then switched to live mode (`MARKETPLACE_MODE=live`).
+
+**5–6 October 2026, the integrations:** an application on the live site created the Notion row and the HubSpot contact, and a status change updated both. The employer email Zap sent the alert to a real employer address. UptimeRobot's keyword monitor shows the backend as up.
+
+**Not tested yet:** the Typeform Zap.
