@@ -147,4 +147,4 @@ Entries reach Notion only, not the backend's database. That's fine for a free pl
 
 **5–6 October 2026, the integrations:** an application on the live site created the Notion row and the HubSpot contact, and a status change updated both. The employer email Zap sent the alert to a real employer address. UptimeRobot's keyword monitor shows the backend as up.
 
-**Not tested yet:** the Typeform Zap.
+**6 October 2026, Typeform:** a test entry through the live form created a Notion row with every mapped column filled (Role and Experience as the existing select options, Status "New Applicants", Job "Interest form"). The employer email Zap then sent "New application for Interest form" to the team's Gmail. All services are now tested.
